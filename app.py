@@ -73,14 +73,27 @@ class Handler(WebHandler):
 <button type="submit" class="primary">Create my account →</button></form></details></section>
 <p style="margin-top:24px">Educational exploration, one day at a time.</p></main></body></html>''')
 
+    def account(self, user):
+        return {'storageKey': 'local-web-user-' + str(user['id']), 'email': user['email'], 'name': user['name']}
+
     def do_GET(self):
         path = self.path.split('?', 1)[0]
-        if path in ('/', '/index.html'):
+        if path == '/api/account':
+            user=self.user()
+            if not user:
+                return self.send_error(401)
+            self.send_response(200)
+            self.send_header('Content-Type','application/json')
+            self.send_header('Cache-Control','no-store')
+            self.end_headers()
+            self.wfile.write(json.dumps(self.account(user)).encode())
+            return
+        if path in ('/', '/app', '/index.html'):
             user = self.user()
             if not user:
                 return self.login()
             page = (ROOT / 'static/index.html').read_text()
-            script = '<script>window.LONGEVITY_STORAGE_KEY=' + json.dumps('longevity-web-user-' + str(user['id'])) + ';</script>'
+            script = '<script>window.LONGEVITY_ACCOUNT=' + json.dumps(self.account(user)).replace('<', chr(92) + 'u003c') + ';</script>'
             return self.reply(page.replace('<script src="run-math.js">', script + '<script src="run-math.js">'))
         # Only serve public assets. Never expose source, databases, or directories.
         allowed = { '/' + p.name for p in (ROOT / 'static').iterdir() if p.is_file() and p.name != 'index.html' }

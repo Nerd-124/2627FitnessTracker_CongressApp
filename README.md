@@ -1,7 +1,7 @@
 # Longevity Simulator
 
 A JavaScript web interface with a Python backend for the Congressional App Challenge.
-The restored design includes the guided profile setup, daily journal calendar and
+The latest live design includes typed workout logging, compact map/timer views, and the guided profile setup, daily journal calendar and
 charts, sleep/EEG imports, live GPS controls, elevation charts and route playback.
 
 ## Start on your Mac
@@ -20,6 +20,7 @@ are required to run the web edition. See [START_HERE.md](START_HERE.md).
 - `longevity/storage.py`: SQLite accounts with hashed passwords and sign-in throttling.
 - `static/index.html` and `static/style.css`: page structure and visual styling.
 - `static/*.js`: interactive journal, GPS, charts and playback.
+- `hosted/`: latest live-site source, preserved with its Sites authentication and build script.
 - `streamlit_app.py` and `screens/`: preserved Python-only interface.
 
 ## Accounts and records
@@ -48,3 +49,5 @@ python -m streamlit run streamlit_app.py
 ```
 
 Do not commit .data/, passwords or personal health exports.
+
+See [START_HERE.md](START_HERE.md) for download and VS Code steps. The hosted source snapshot matches live commit ff0325562ae6182101fe52a417311c14c0265eb3. Local calculations use the Python server; the hosted edition uses Python in the browser. Maps require internet and real phone GPS still needs HTTPS.
