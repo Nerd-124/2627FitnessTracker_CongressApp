@@ -50,4 +50,6 @@ python -m streamlit run streamlit_app.py
 
 Do not commit .data/, passwords or personal health exports.
 
-See [START_HERE.md](START_HERE.md) for download and VS Code steps. The hosted source snapshot matches live commit ff0325562ae6182101fe52a417311c14c0265eb3. Local calculations use the Python server; the hosted edition uses Python in the browser. Maps require internet and real phone GPS still needs HTTPS.
+See [START_HERE.md](START_HERE.md) for download and VS Code steps. The hosted source snapshot matches live commit dc211bad65cc6d55056378e8b8c3f190bd6e67e6. Local calculations use the Python server; the hosted edition uses Python in the browser. Maps require internet and real phone GPS still needs HTTPS.
+
+My plan now supports explainable suggestions from recent records and baseline habits, editable weekly/monthly/yearly/custom schedules, and per-date check-ins. See hosted/PLANNER.md for rules and limitations.
