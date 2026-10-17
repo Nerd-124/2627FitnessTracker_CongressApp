@@ -29,7 +29,7 @@ class InterfaceTests(unittest.TestCase):
         self.folder.cleanup()
 
     def test_signup_profile_and_every_screen(self):
-        app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=20).run()
+        app = AppTest.from_file(str(ROOT / "streamlit_app.py"), default_timeout=20).run()
         self.assertFalse(app.exception)
         labeled(app.text_input, "Name or nickname").set_value("Alex")
         labeled(app.text_input, "Email address").set_value("alex@example.test")
@@ -75,7 +75,7 @@ class InterfaceTests(unittest.TestCase):
                 "plants": 5,
             },
         )
-        app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=20)
+        app = AppTest.from_file(str(ROOT / "streamlit_app.py"), default_timeout=20)
         app.session_state["user"] = user
         app.run()
         app.sidebar.radio[0].set_value("Daily journal").run()
@@ -125,7 +125,7 @@ class InterfaceTests(unittest.TestCase):
                 "calories": 180,
             },
         )
-        app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=20)
+        app = AppTest.from_file(str(ROOT / "streamlit_app.py"), default_timeout=20)
         app.session_state["user"] = user
         app.run()
         app.sidebar.radio[0].set_value("Exercise & routes").run()

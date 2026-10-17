@@ -1,0 +1,227 @@
+"use strict";
+const RunMath = (() => {
+  const mile = 1609.344;
+  const finite = (n) => typeof n === "number" && Number.isFinite(n);
+  function meters(a, b) {
+    const rad = (n) => (n * Math.PI) / 180,
+      dlat = rad(b.lat - a.lat),
+      dlon = rad(b.lon - a.lon),
+      h =
+        Math.sin(dlat / 2) ** 2 +
+        Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dlon / 2) ** 2;
+    return 12742000 * Math.asin(Math.sqrt(Math.min(1, h)));
+  }
+  function analyze(raw, seconds = 0) {
+    let total = 0,
+      gain = 0,
+      down = 0,
+      gaps = 0,
+      unknown = 0,
+      excluded = 0;
+    const points = [],
+      segments = [];
+    let anchor = null,
+      anchorMeters = 0;
+    for (let i = 0; i < raw.length; i++) {
+      const p = raw[i];
+      const prev = raw[i - 1],
+        next = raw[i + 1];
+      const neighbors =
+        prev &&
+        next &&
+        !p.breakBefore &&
+        !next.breakBefore &&
+        [prev, p, next].every((v) => finite(v.ele))
+          ? [prev.ele, p.ele, next.ele].sort((a, b) => a - b)
+          : null;
+      const height = finite(p.ele) ? (neighbors ? neighbors[1] : p.ele) : null;
+      const point = {
+        ...p,
+        height,
+        meters: total,
+        ascent: gain,
+        elapsed: finite(p.elapsed) ? p.elapsed : null,
+      };
+      if (!i || p.breakBefore) {
+        if (i) gaps++;
+        anchor = height;
+        anchorMeters = total;
+        points.push(point);
+        continue;
+      }
+      const length = meters(raw[i - 1], p);
+      let delta = null;
+      if (finite(height) && finite(anchor)) {
+        const proposed = height - anchor;
+        if (Math.abs(proposed) >= 3) {
+          if (
+            length > 0 &&
+            Math.abs(proposed / (total + length - anchorMeters)) <= 0.3
+          ) {
+            delta = proposed;
+            anchor = height;
+            anchorMeters = total + length;
+          } else {
+            excluded++;
+            anchor = height;
+            anchorMeters = total + length;
+          }
+        } else delta = 0;
+      } else {
+        unknown++;
+        anchor = height;
+        anchorMeters = total + length;
+      }
+      total += length;
+      point.meters = total;
+      if (delta !== null) {
+        gain += Math.max(0, delta);
+        down += Math.max(0, -delta);
+      }
+      point.ascent = gain;
+      segments.push({ distance_m: length, elevation_delta_m: delta });
+      points.push(point);
+    }
+    const times = points.every((p) => finite(p.elapsed));
+    const stamps = points.map((p) => Date.parse(p.time));
+    const dated =
+      stamps.length > 1 &&
+      stamps.every(Number.isFinite) &&
+      stamps.every((v, i) => !i || v >= stamps[i - 1]) &&
+      stamps.at(-1) > stamps[0];
+    if (!times) {
+      for (let i = 0; i < points.length; i++)
+        points[i].elapsed = dated
+          ? (stamps[i] - stamps[0]) / 1000
+          : total
+            ? (points[i].meters / total) * seconds
+            : 0;
+    }
+    const duration = seconds || points.at(-1)?.elapsed || 0;
+    return {
+      points,
+      segments,
+      distance: total,
+      gain,
+      down,
+      gaps,
+      unknown,
+      excluded,
+      altitudePoints: points.filter((p) => finite(p.height)).length,
+      duration,
+      timed: times || dated,
+    };
+  }
+  function energy(analysis, seconds, kg, mode) {
+    const minutes = seconds / 60;
+    return Math.round(
+      ((((mode === "walk" ? 0.1 : 0.2) * analysis.distance +
+        3.5 * minutes +
+        (mode === "walk" ? 1.8 : 0.9) * analysis.gain) *
+        kg) /
+        1000) *
+        5,
+    );
+  }
+  function pace(seconds, meters) {
+    if (meters <= 0 || seconds <= 0) return "—";
+    const per = seconds / (meters / 1000);
+    return (
+      Math.floor(per / 60) + ":" + String(Math.round(per % 60)).padStart(2, "0")
+    );
+  }
+  function clock(seconds) {
+    const s = Math.max(0, Math.floor(seconds)),
+      h = Math.floor(s / 3600),
+      m = Math.floor(s / 60) % 60;
+    return (
+      (h ? String(h) + ":" : "") +
+      String(m).padStart(2, "0") +
+      ":" +
+      String(s % 60).padStart(2, "0")
+    );
+  }
+  function splits(a, unit = mile) {
+    const result = [];
+    let boundary = unit,
+      lastMeters = 0,
+      lastTime = 0;
+    for (let i = 1; i < a.points.length; i++) {
+      const p = a.points[i],
+        prev = a.points[i - 1];
+      if (p.breakBefore || p.meters <= prev.meters) continue;
+      while (p.meters >= boundary) {
+        const t =
+          prev.elapsed +
+          ((p.elapsed - prev.elapsed) * (boundary - prev.meters)) /
+            (p.meters - prev.meters);
+        result.push({
+          distance: boundary - lastMeters,
+          seconds: t - lastTime,
+          total: boundary,
+          partial: false,
+        });
+        lastMeters = boundary;
+        lastTime = t;
+        boundary += unit;
+      }
+    }
+    if (a.distance - lastMeters > 1)
+      result.push({
+        distance: a.distance - lastMeters,
+        seconds: Math.max(0, a.duration - lastTime),
+        total: a.distance,
+        partial: true,
+      });
+    return result;
+  }
+  function at(a, fraction) {
+    if (!a.points.length) return null;
+    const duration = a.points.at(-1).elapsed,
+      target = Math.max(0, Math.min(1, fraction)) * duration;
+    let index = a.points.findIndex((p) => p.elapsed >= target);
+    if (index < 0) index = a.points.length - 1;
+    const right = a.points[index],
+      left = a.points[Math.max(0, index - 1)];
+    if (right.breakBefore && target < right.elapsed)
+      return { ...left, elapsed: target, index: index - 1, inGap: true };
+    if (right.elapsed === left.elapsed || target >= right.elapsed)
+      return { ...right, index };
+    const f = (target - left.elapsed) / (right.elapsed - left.elapsed);
+    return {
+      ...left,
+      lat: left.lat + (right.lat - left.lat) * f,
+      lon: left.lon + (right.lon - left.lon) * f,
+      meters: left.meters + (right.meters - left.meters) * f,
+      elapsed: target,
+      ascent: left.ascent + (right.ascent - left.ascent) * f,
+      height:
+        finite(left.height) && finite(right.height)
+          ? left.height + (right.height - left.height) * f
+          : null,
+      index,
+    };
+  }
+  function toGPX(points, name = "Longevity Simulator run") {
+    const esc = (v) =>
+      String(v).replace(
+        /[&<>"']/g,
+        (c) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&apos;",
+          })[c],
+      );
+    let body = "";
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      if (i && p.breakBefore) body += "</trkseg><trkseg>";
+      body += `<trkpt lat="${p.lat}" lon="${p.lon}">${finite(p.ele) ? "<ele>" + p.ele + "</ele>" : ""}${p.time && Number.isFinite(Date.parse(p.time)) ? "<time>" + esc(p.time) + "</time>" : ""}</trkpt>`;
+    }
+    return `<?xml version="1.0"?><gpx version="1.1" creator="Longevity Simulator" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${esc(name)}</name><trkseg>${body}</trkseg></trk></gpx>`;
+  }
+  return { mile, meters, analyze, energy, pace, clock, splits, at, toGPX };
+})();

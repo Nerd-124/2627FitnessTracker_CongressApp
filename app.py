@@ -1,115 +1,131 @@
-"""START HERE: the Python entry point for Longevity Simulator.
+"""Run the JavaScript interface with a Python server: python3 app.py.
 
-Run: python -m streamlit run app.py
-This file chooses the screen; each screen and calculation is also Python.
+Accounts reuse the Streamlit SQLite database. Health entries in this edition
+stay in account-scoped browser storage; the Streamlit edition remains separate.
 """
-
+import html
+import json
 import os
+import secrets
+import time
+from http.cookies import SimpleCookie
+from http.server import ThreadingHTTPServer
 from pathlib import Path
-import streamlit as st
+from urllib.parse import parse_qs
 from longevity.storage import Database
-from screens import account, exercise, home, journal, profile, scenarios, science, sleep
+from web_app import Handler as WebHandler
 
-ROOT = Path(__file__).resolve().parent
-DATA_FOLDER = Path(os.environ.get("LONGEVITY_DATA_DIR", ROOT / ".data"))
+ROOT = Path(__file__).parent
+DB = Database(Path(os.environ.get('LONGEVITY_DATA_DIR', ROOT / '.data')) / 'longevity.sqlite3')
+SESSIONS = {}
 
 
-def login_screen(db):
-    st.title("Longevity Simulator")
-    st.write("Your habits, sleep, and exercise — with Python at the center.")
-    sign_in, sign_up = st.tabs(["Sign in", "Create account"])
-    with sign_in:
-        with st.form("sign_in"):
-            email = st.text_input("Email", key="login_email")
-            password = st.text_input("Password", type="password", key="login_password")
-            submitted = st.form_submit_button("Sign in", type="primary")
-        if submitted:
+class Handler(WebHandler):
+    def user(self):
+        cookie = SimpleCookie()
+        try:
+            cookie.load(self.headers.get('Cookie', ''))
+            token = cookie.get('longevity_session')
+            session = SESSIONS.get(token.value) if token else None
+        except Exception:
+            return None
+        if session and session['expires'] > time.time():
+            return session['user']
+        return None
+
+    def reply(self, body, status=200, cookie=None):
+        self.send_response(status)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'DENY')
+        if cookie:
+            self.send_header('Set-Cookie', cookie)
+        self.end_headers()
+        self.wfile.write(body.encode())
+
+    def redirect(self, cookie=None):
+        self.send_response(303)
+        self.send_header('Location', '/')
+        self.send_header('Cache-Control', 'no-store')
+        if cookie:
+            self.send_header('Set-Cookie', cookie)
+        self.end_headers()
+
+    def login(self, error=''):
+        self.reply('''<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome · Longevity Simulator</title><link rel="stylesheet" href="/style.css">
+<body><main style="max-width:560px;margin:8vh auto;padding:24px">
+<p class="eyebrow">LONGEVITY SIMULATOR</p><h1>Your healthier future starts here.</h1>
+<p>Sign in to your space, or create an account to begin.</p>
+<section class="card" style="padding:28px;margin-top:28px">
+<p role="alert">''' + html.escape(error) + '''</p>
+<form method="post" action="/login" style="display:grid;gap:18px">
+<label>Email<input name="email" type="email" autocomplete="email" required></label>
+<label>Password<input name="password" type="password" autocomplete="current-password" required maxlength="256"></label>
+<button type="submit" class="primary">Sign in →</button></form>
+<details style="margin-top:28px"><summary>Create a new account</summary>
+<form method="post" action="/register" style="display:grid;gap:18px;margin-top:20px">
+<label>Your name<input name="name" autocomplete="name" required maxlength="80"></label>
+<label>Email<input name="email" type="email" autocomplete="email" required></label>
+<label>Password · at least 10 characters<input name="password" type="password" autocomplete="new-password" minlength="10" maxlength="256" required></label>
+<button type="submit" class="primary">Create my account →</button></form></details></section>
+<p style="margin-top:24px">Educational exploration, one day at a time.</p></main></body></html>''')
+
+    def do_GET(self):
+        path = self.path.split('?', 1)[0]
+        if path in ('/', '/index.html'):
+            user = self.user()
+            if not user:
+                return self.login()
+            page = (ROOT / 'static/index.html').read_text()
+            script = '<script>window.LONGEVITY_STORAGE_KEY=' + json.dumps('longevity-web-user-' + str(user['id'])) + ';</script>'
+            return self.reply(page.replace('<script src="run-math.js">', script + '<script src="run-math.js">'))
+        # Only serve public assets. Never expose source, databases, or directories.
+        allowed = { '/' + p.name for p in (ROOT / 'static').iterdir() if p.is_file() and p.name != 'index.html' }
+        if path not in allowed:
+            return self.send_error(404)
+        super().do_GET()
+
+    def do_POST(self):
+        # Browser form requests must originate from this local server.
+        origin = self.headers.get('Origin')
+        if origin and origin != 'http://' + self.headers.get('Host', ''):
+            return self.send_error(403)
+        if self.headers.get('Sec-Fetch-Site') == 'cross-site':
+            return self.send_error(403)
+        if self.path == '/logout':
+            cookie = SimpleCookie(self.headers.get('Cookie', ''))
+            token = cookie.get('longevity_session')
+            if token:
+                SESSIONS.pop(token.value, None)
+            return self.redirect('longevity_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0')
+        if self.path in ('/login', '/register'):
             try:
-                user = db.sign_in(email, password)
-                st.session_state.clear()  # Remove the password widget state.
-                st.session_state.user = user
-                st.rerun()
-            except ValueError as error:
-                st.error(str(error))
-    with sign_up:
-        with st.form("sign_up"):
-            name = st.text_input("Name or nickname")
-            email = st.text_input("Email address")
-            password = st.text_input(
-                "Choose a password (10+ characters)", type="password"
-            )
-            repeated = st.text_input("Repeat password", type="password")
-            submitted = st.form_submit_button("Create account")
-        if submitted:
-            if password != repeated:
-                st.error("The passwords do not match.")
-            else:
-                try:
-                    user = db.register(name, email, password)
-                    st.session_state.clear()
-                    st.session_state.user = user
-                    st.rerun()
-                except ValueError as error:
-                    st.error(str(error))
-    st.caption(
-        "Accounts and records are stored on this Python server. Use HTTPS if hosting beyond your own computer."
-    )
+                size = int(self.headers.get('Content-Length', '0'))
+                if not 0 < size < 4096:
+                    raise ValueError('Invalid form size.')
+                data = parse_qs(self.rfile.read(size).decode())
+                value = lambda name: data.get(name, [''])[0]
+                if self.path == '/register':
+                    user = DB.register(value('name'), value('email'), value('password'))
+                else:
+                    user = DB.sign_in(value('email'), value('password'))
+                for key, session in list(SESSIONS.items()):
+                    if session['expires'] <= time.time():
+                        SESSIONS.pop(key, None)
+                token = secrets.token_urlsafe(32)
+                SESSIONS[token] = {'user': user, 'expires': time.time() + 43200}
+                return self.redirect('longevity_session=' + token + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200')
+            except (ValueError, UnicodeError) as exc:
+                return self.login(str(exc))
+        if not self.user():
+            return self.send_error(401)
+        super().do_POST()
 
 
-def main():
-    st.set_page_config(page_title="Longevity Simulator", page_icon="🌱", layout="wide")
-    db = Database(DATA_FOLDER / "longevity.sqlite3")
-    user = st.session_state.get("user")
-    if user is None:
-        login_screen(db)
-        return
-    st.sidebar.title("🌱 Longevity")
-    st.sidebar.caption(f"Signed in as {user['name']}")
-    if st.sidebar.button("Sign out"):
-        recorder = st.session_state.get("recorder")
-        if recorder:
-            recorder.pause()
-            db.save(user["id"], "draft", "main", recorder.draft())
-        st.session_state.clear()
-        st.rerun()
-    current_profile = db.get(user["id"], "profile", "main")
-    if not current_profile:
-        profile.render(db, user)
-        st.caption(
-            "Already used the web app? You can import its JSON export after creating this profile."
-        )
-        return
-    screens = {
-        "Today": home,
-        "Daily journal": journal,
-        "Sleep": sleep,
-        "Exercise & routes": exercise,
-        "Try a habit": scenarios,
-        "My profile": profile,
-        "Account & backups": account,
-        "The science": science,
-    }
-    chosen = st.sidebar.radio("Open a screen", list(screens))
-    recorder = st.session_state.get("recorder")
-    if (
-        chosen != "Exercise & routes"
-        and recorder
-        and recorder.data["phase"] in ("recording", "acquiring")
-    ):
-        recorder.pause()
-        db.save(user["id"], "draft", "main", recorder.draft())
-        st.session_state.gps_command = {"command": "stop", "token": "screen_changed"}
-    if "notice" in st.session_state:
-        st.success(st.session_state.pop("notice"))
-    (
-        screens[chosen].render(db, user, current_profile)
-        if chosen != "My profile"
-        else profile.render(db, user)
-    )
-    st.sidebar.caption(
-        "Educational prototype. Read app.py first, then the screen you want to change."
-    )
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', '8000'))
+    print(f'Longevity Simulator → http://127.0.0.1:{port}', flush=True)
+    ThreadingHTTPServer(('127.0.0.1', port), Handler).serve_forever()
