@@ -1,92 +1,87 @@
-# Longevity Simulator
+# Longevity Simulator — Python first
 
-A work-in-progress Congressional App Challenge project about aging, lifestyle habits, sleep, and exercise. The project includes a Python local web app and the complete source of the private hosted app.
+The main app is now written in **Python**, including its screens. You no longer need to understand a large JavaScript/HTML application to change a page.
 
-**Live app:** https://longevity-simulator-lab.idealapple4.chatgpt.site
+- **Python:** screens, accounts, SQLite storage, profile setup, journal calendars, charts, sleep/EEG imports, GPS filtering, timers, route calculations, calorie estimates, playback, and splits.
+- **Small JavaScript adapter:** asks the browser for GPS fixes and forwards them to Python. Browsers require JavaScript for this sensor API. The adapter contains no health calculations.
+- **Streamlit:** turns your Python widgets into a browser interface. You write Python rather than hand-writing the web interface.
 
-## Open it in VS Code
+**Start learning with [START_HERE.md](START_HERE.md).**
 
-1. On GitHub, choose **Code → Download ZIP**, extract the ZIP, and open the extracted folder in VS Code. Or clone the repository:
+## Run in VS Code
 
-   ```bash
-   git clone https://github.com/Nerd-124/2627FitnessTracker_CongressApp.git
-   cd 2627FitnessTracker_CongressApp
-   code .
-   ```
+Install Python 3.10 or newer, download this repository, and open the folder in VS Code. In its terminal:
 
-2. Install **Python 3.10 or newer**. No additional Python packages are needed.
-3. Open the VS Code terminal and run:
+```bash
+python -m venv .venv
+```
 
-   ```bash
-   python app.py
-   ```
+Activate the environment:
 
-   On a Mac where `python` is unavailable, use `python3 app.py`.
+- **Windows:** `.venv\Scripts\activate`
+- **Mac/Linux:** `source .venv/bin/activate`
 
-4. Open **http://localhost:8000** in a browser. Stop the app with **Ctrl+C**.
+Then:
 
-You can also install the recommended VS Code Python extension and select **Run Longevity Simulator** in Run and Debug. The server binds to localhost for local development; the hosted HTTPS app is the appropriate place to try GPS on a phone.
+```bash
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
+```
 
-## Which files do I edit?
+On Mac, use `python3` for the first command if `python` is unavailable. Open **http://localhost:8501**. Create an account, save your profile, and choose a screen in the sidebar. Stop the server with **Ctrl+C**.
 
-| Location | Purpose |
+You can also select the `.venv` Python interpreter in VS Code and press **F5** with the included debugger configuration. Do not use `python app.py` directly: Streamlit supplies the interface runtime.
+
+## A small, understandable project
+
+| File or folder | What you change here |
 | --- | --- |
-| `app.py` | Python server and research-equation calculations for the local app |
-| `static/` | Local app pages, styles, browser logic, GPS recorder, and assets |
-| `hosted/web/` | Complete browser source used by the live app |
-| `hosted/web/model.py` | Python model used in the hosted browser through Pyodide |
-| `hosted/worker/server-template.js` | Protected page serving and Sites identity handling |
-| `hosted/scripts/build.mjs` | Builds the hosted Worker with embedded browser assets |
-| `test_app.py` and `tests/` | Python, calculation, authentication, and UI interaction checks |
-| `.vscode/` | VS Code debugger configuration and extension recommendation |
+| `app.py` | Sign-in, sidebar navigation, and which screen opens |
+| `screens/home.py` | Daily habits and seven-day check-ins |
+| `screens/profile.py` | Profile form |
+| `screens/journal.py` | Calendar bubbles, journal form, graphs, and date ranges |
+| `screens/sleep.py` | Sleep history and optional advanced EEG import |
+| `screens/exercise.py` | GPS controls, run history, maps, playback, and splits |
+| `screens/scenarios.py` | Lifestyle sliders and comparisons |
+| `screens/account.py` | Export, import, and record deletion |
+| `longevity/health.py` | BMI, BMR, sleep duration, and energy formulas |
+| `longevity/routes.py` | Distance, elevation, gaps, splits, GPX, and playback math |
+| `longevity/recorder.py` | Recording / waiting / paused state transitions |
+| `longevity/storage.py` | Account passwords and user-owned SQLite records |
+| `longevity/journal.py` | Journal validation, missing values, and summaries |
+| `gps_component/` | The small browser-to-Python GPS adapter |
+| `tests/` | Examples that check the Python behavior |
 
-The local and hosted browser files are separate editions. Changes to `static/` affect your local Python app; changes to `hosted/web/` affect the hosted source when it is built and published. Neither a Git commit nor running the local app automatically deploys the live site.
+There is no Node.js or npm requirement for this version. The earlier web app is preserved on the [`web-version` branch](https://github.com/Nerd-124/2627FitnessTracker_CongressApp/tree/web-version).
 
-## Current features
+## What happens to the current website?
 
-- Profile setup, a virtual self, and educational habit comparisons.
-- Daily habit check-ins and seven-day progress.
-- An interactive journal with calendar bubbles, line/bar graphs, date ranges, and editable day details.
-- Sleep records and optional imported EEG charts.
-- GPS walking/running with live distance, pace, estimated calories, pause/resume, automatic session saving, and recoverable drafts.
-- Route playback, mile/km splits, elevation profiles, optional terrain-elevation lookup, and GPX export/import.
-- Phone home-screen installation assets and optional screen wake lock.
-- Hosted ChatGPT sign-in, sign-out, account-separated browser records, and an explicit legacy-data import.
+https://longevity-simulator-lab.idealapple4.chatgpt.site continues running the previous web edition. This Python rewrite does **not** silently replace that site or its browser-stored records. Streamlit needs a Python-capable server; it cannot run as the previous Cloudflare Worker.
 
-## Important implementation boundaries
+To bring your earlier records over, export JSON from the previous app, create a Python account/profile, then use **Account & backups → Import**. Profile and journal data can be imported, along with supported activity records. The two editions have separate login systems: the live site uses ChatGPT, while this local Python version has its own SQLite accounts. The interface is now Streamlit, so its appearance differs from the previous site.
 
-**Health and models:** this is an educational prototype, not a medical assessment or lifespan predictor. The habit index and future curve are illustrative. Energy estimates use research equations; no trained AI service is connected. Temperature/humidity provide weather and heat context, not an invented calorie bonus. EEG requires imported device data; a phone does not measure brainwaves or infer sleep stages here.
+## GPS and phone use
 
-**GPS:** the app requires HTTPS or localhost and location permission. Keep it visible with the phone screen on. It auto-pauses when it leaves the foreground. Reliable locked-screen/background location tracking needs a native app. Permission and hardware limitations cannot be overridden by the app. Physical-phone outdoor testing is still needed.
+GPS needs browser permission and HTTPS or localhost. Keep the app visible with the screen on. The small adapter forwards raw sensor data; Python validates accuracy, computes distances, and controls the timer. It waits up to 45 seconds for a usable fix. Stationary users still accumulate active time after GPS connects. Pauses and GPS gaps are not joined into distance.
 
-**Accounts:** the hosted edition uses the Sites authenticated gateway. The local Python development server has no login protection. Do not expose the local server publicly or deploy the Worker outside Sites while trusting unverified identity headers. The existing hosted site is private; signing in does not grant an uninvited person access.
+To record from a phone, deploy the Python server behind HTTPS and access that server from the phone. A plain HTTP LAN address normally cannot use geolocation. This edition requires a live browser connection to its Python server and is **not** an offline/native background tracker. Reliable locked-screen GPS needs native mobile support. Physical-phone GPS, wake-lock behavior, and external basemap loading still require device testing.
 
-**Data:** health records and run drafts are stored in this browser's localStorage, not in a cloud database. Hosted storage is separated by account but is not encrypted. It does not sync across devices. Export before clearing browser data. Credentials, personal health records, and browser profiles are not included in this repository.
+GPS and calorie values are estimates. Altitude may be missing or noisy. The route analyzer filters small height changes and implausible slopes. Calories use research equations, not a trained AI. Temperature/humidity can be saved as context and do not receive an invented calorie multiplier. Optional EEG import displays device data; it does not measure brainwaves or infer sleep stages.
 
-## Run checks
+## Data and accounts
 
-Python checks need only Python:
+Data is stored in `.data/longevity.sqlite3` on the computer running the server. The folder is ignored by Git. Passwords use salted PBKDF2 hashes; records are separated by account. The database itself is not encrypted. Back up the file privately or use JSON export. `LONGEVITY_DATA_DIR` can point to another persistent folder.
+
+This is an educational application, not a production healthcare system. Email verification, password recovery, public hosting hardening, and production identity management are not implemented. Do not use sensitive real health data in public demos. Public deployment needs HTTPS, persistent database storage, and a proper hosting/security review.
+
+## Test it
+
+After installing requirements:
 
 ```bash
-python -m unittest -v
+python -m unittest discover -s tests -v
 ```
 
-The optional UI/build checks need **Node.js 20 or newer**:
+The tests cover calculations, journal validation, calendar dates, EEG parsing, GPS filtering, pauses/gaps, route playback, accounts, data isolation, backups, and actual Streamlit screen interactions. Real phone hardware is not simulated as a claim of outdoor accuracy.
 
-```bash
-npm install
-npm test
-```
-
-On systems using `python3`, run `python3 -m unittest -v` and `npm run test:js` separately.
-
-`npm run build:hosted` generates the hosted Worker. The output is ignored by Git because it can be rebuilt from source. The automated checks use simulated GPS and DOM interactions; they do not replace outdoor phone or browser sign-in testing.
-
-## Further documentation
-
-- [Feature and model notes](LONGEVITY_SIMULATOR.md)
-- [GPS recorder and limitations](RUN_RECORDER.md)
-- [Hosted build](BROWSER_VERSION.md)
-- [Hosted authentication](hosted/AUTHENTICATION.md)
-
-This project was developed with AI assistance. Review the code, document your contributions, and check your district's official Congressional App Challenge rules before submitting. The rules PDF was not available in this conversation, so competition compliance has not been verified.
+The app is still in development. Its illustrative habit score and future curve do not predict biological age, lifespan, or medical risk. The code was developed with AI assistance; review the official Congressional App Challenge rules and accurately document your contributions before submission.

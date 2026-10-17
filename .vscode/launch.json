@@ -1,14 +1,13 @@
 {
   "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Run Longevity Simulator",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "${workspaceFolder}/app.py",
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "justMyCode": true
-    }
-  ]
+  "configurations": [{
+    "name": "Run Python Longevity Simulator",
+    "type": "debugpy",
+    "request": "launch",
+    "module": "streamlit",
+    "args": ["run", "app.py"],
+    "cwd": "${workspaceFolder}",
+    "console": "integratedTerminal",
+    "justMyCode": true
+  }]
 }
