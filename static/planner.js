@@ -141,6 +141,7 @@ function renderPlanner(){
  for(const p of state.plans){const opt=document.createElement('option');opt.value=p.id;opt.textContent=p.title+' · '+p.start;selector.append(opt);}
  if(plan)selector.value=plan.id;
  $('#planner-saved-controls').hidden=!state.plans.length;$('#planner-active').hidden=!plan||!!plannerDraft;
+ if(typeof renderCoachToday==='function')renderCoachToday();
  if(!plan)return;
  $('#planner-name').textContent=plan.title;$('#planner-goal').textContent=plan.goal;$('#planner-period').textContent=plan.start+' → '+plan.end;
  plannerReasons($('#planner-active-reasons'),plan.reasons);

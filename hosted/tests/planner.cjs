@@ -4,7 +4,7 @@ function create(seed){
  const dom=new JSDOM(fs.readFileSync(root+'index.html','utf8'),{url:'https://app.test/app',runScripts:'outside-only',virtualConsole:new VirtualConsole()});
  const w=dom.window;w.scrollTo=()=>{};w.confirm=()=>true;w.fetch=async()=>({ok:true,json:async()=>({})});w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
  w.localStorage.setItem('longevity-simulator-v1',JSON.stringify(seed||{profile:{name:'Test',age:30,height:170,weight:70},habits:{exercise:500,sleep:12,plants:10},baselineHabits:{exercise:30,sleep:6,plants:2},records:[],onboardingComplete:false}));
- w.eval(['run-math.js','runner.js','journal.js','account.js','features.js','sleep.js','workouts.js','home.js','setup.js','planner.js','app.js'].map(n=>fs.readFileSync(root+n,'utf8')).join('\n')+'\nensureRunnerMap=async()=>{};window.testState=state;Object.assign(window,{plannerDateAdd,plannerPeriodEnd,validatePlannerSettings,plannerCurrentStatus,suggestPlanner,plannerTaskScheduled,plannerCheckin,localDate});');
+ w.eval(['run-math.js','runner.js','journal.js','account.js','features.js','sleep.js','workouts.js','home.js','setup.js','planner.js','coach-rules.js','coach.js','app.js'].map(n=>fs.readFileSync(root+n,'utf8')).join('\n')+'\nensureRunnerMap=async()=>{};window.testState=state;Object.assign(window,{plannerDateAdd,plannerPeriodEnd,validatePlannerSettings,plannerCurrentStatus,suggestPlanner,plannerTaskScheduled,plannerCheckin,localDate});');
  return {dom,w,$:s=>w.document.querySelector(s)};
 }
 const apps=[];const use=seed=>{const a=create(seed);apps.push(a);return a;};

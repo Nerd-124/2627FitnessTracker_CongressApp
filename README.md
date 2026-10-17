@@ -50,6 +50,10 @@ python -m streamlit run streamlit_app.py
 
 Do not commit .data/, passwords or personal health exports.
 
-See [START_HERE.md](START_HERE.md) for download and VS Code steps. The hosted source snapshot matches live commit dc211bad65cc6d55056378e8b8c3f190bd6e67e6. Local calculations use the Python server; the hosted edition uses Python in the browser. Maps require internet and real phone GPS still needs HTTPS.
+See [START_HERE.md](START_HERE.md) for download and VS Code steps. The hosted source snapshot matches live commit 6ef255b89926303b37b296cb037d64f0717ae572. Local calculations use the Python server; the hosted edition uses Python in the browser. Maps require internet and real phone GPS still needs HTTPS.
 
 My plan now supports explainable suggestions from recent records and baseline habits, editable weekly/monthly/yearly/custom schedules, and per-date check-ins. See hosted/PLANNER.md for rules and limitations.
+
+My plan now supports explainable suggestions from recent records and baseline habits, editable weekly/monthly/yearly/custom schedules, and per-date check-ins. See hosted/PLANNER.md for rules and limitations.
+
+The Today page now includes a free chat-based coach using built-in browser rules, not a paid AI model. No API key is needed. It offers plan choices from supported goals and preferences and saves a chosen plan to Today/My plan. See hosted/FREE_COACH.md.

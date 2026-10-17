@@ -16,10 +16,12 @@ async function identity(request){
  return {email,name:decoded||email,storageKey};
 }
 export default {
- async fetch(request){
+ async fetch(request,env={}){
   const url=new URL(request.url);const path=url.pathname;
+  if(path==='/api/coach'&&request.method==='POST')return reply(JSON.stringify({error:'The coach now runs free in your browser. Refresh the app.',code:'free_coach'}),410);
   if(!['GET','HEAD'].includes(request.method))return reply(JSON.stringify({error:'Method not allowed'}),405,undefined,{'Allow':'GET, HEAD'});
   const user=await identity(request);
+  if(path==='/api/coach/status')return user?reply(JSON.stringify({configured:true,mode:'free-rules',paidApiEnabled:false})):reply(JSON.stringify({error:'Sign-in required'}),401);
   if(path==='/api/account')return user?reply(JSON.stringify(user)):reply(JSON.stringify({error:'Sign-in required'}),401);
   if(path==='/'||path==='/welcome')return reply(request.method==='HEAD'?null:ASSETS['/welcome.html'].body,200,'text/html; charset=utf-8');
   if(!user){if(path==='/app'||path==='/app/'||path==='/index.html')return reply(null,302,undefined,{'Location':'/signin-with-chatgpt?return_to=%2Fapp'});return reply(JSON.stringify({error:'Sign-in required'}),401);}
