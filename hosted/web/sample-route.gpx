@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Longevity Simulator demo" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>Fictional demonstration route</name></metadata><trk><name>Demo hill loop — fictional elevations</name><trkseg>
+<trkpt lat="38.8894" lon="-77.0353"><ele>10</ele></trkpt>
+<trkpt lat="38.8920" lon="-77.0350"><ele>30</ele></trkpt>
+<trkpt lat="38.8950" lon="-77.0330"><ele>55</ele></trkpt>
+<trkpt lat="38.8970" lon="-77.0290"><ele>80</ele></trkpt>
+<trkpt lat="38.8955" lon="-77.0240"><ele>60</ele></trkpt>
+<trkpt lat="38.8920" lon="-77.0230"><ele>40</ele></trkpt>
+<trkpt lat="38.8895" lon="-77.0260"><ele>20</ele></trkpt>
+<trkpt lat="38.8894" lon="-77.0300"><ele>15</ele></trkpt>
+<trkpt lat="38.8894" lon="-77.0353"><ele>10</ele></trkpt>
+</trkseg></trk></gpx>

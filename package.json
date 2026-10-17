@@ -1,0 +1,20 @@
+{
+  "name": "longevity-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Python longevity learning app with a browser-based GPS recorder",
+  "scripts": {
+    "build:hosted": "node hosted/scripts/build.mjs",
+    "test:python": "python -m unittest -v",
+    "test:js": "npm run build:hosted && node tests/run-math.cjs && node tests/auth.mjs && node tests/ui/app.cjs && node tests/ui/journal.cjs && node tests/ui/account.cjs && node tests/ui/runner.cjs && node tests/ui/gps-fix.cjs",
+    "test": "npm run test:python && npm run test:js",
+    "format": "prettier --write static hosted/web hosted/worker/server-template.js hosted/scripts tests .vscode package.json"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0",
+    "prettier": "^3.6.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
