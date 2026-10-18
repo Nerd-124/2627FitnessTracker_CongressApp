@@ -57,3 +57,7 @@ My plan now supports explainable suggestions from recent records and baseline ha
 My plan now supports explainable suggestions from recent records and baseline habits, editable weekly/monthly/yearly/custom schedules, and per-date check-ins. See hosted/PLANNER.md for rules and limitations.
 
 The Today page now includes a free chat-based coach using built-in browser rules, not a paid AI model. No API key is needed. It offers plan choices from supported goals and preferences and saves a chosen plan to Today/My plan. See hosted/FREE_COACH.md.
+
+## Native iPhone app
+
+Editable SwiftUI source and a separate Xcode project are now in [ios/](ios/README.md). This native version includes core screens; see the guide for setup, unported web features, and device-testing requirements.
