@@ -61,3 +61,9 @@ In Xcode verify:
 - Compare distance against a known route. Simulator mock GPS does not validate real accuracy.
 
 The project intentionally starts without an app icon or distribution signing setup. Add an asset catalog/app icon before distribution.
+
+## Routine setup
+
+On first launch after this update, existing starter profiles keep their name/goal and are asked to choose exercise and sleep targets. Exercise targets can be daily or weekly; switching units converts the approximate weekly amount. Today totals saved activities in the current local calendar day/week. Targets and goals can be changed under Profile; Cancel discards edits. These preferences currently use device-local UserDefaults, not an authenticated cloud account. Email authentication is not yet configured.
+
+Check in Xcode: complete setup, relaunch to confirm values; edit targets, cancel and verify nothing changes; save and verify Today changes; switch daily/weekly and check units and totals. No Xcode build was available in the authoring environment.

@@ -3,11 +3,12 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var store = AppStore()
     @AppStorage("profileComplete") private var complete = false
+    @AppStorage("profileSetupVersion") private var profileSetupVersion = 0
     @AppStorage("userName") private var name = ""
     @AppStorage("userGoal") private var goal = ""
     var body: some View {
         Group {
-            if complete {
+            if complete && profileSetupVersion >= 1 {
                 TabView {
                     TodayView().tabItem { Label("Today", systemImage: "sun.max") }
                     ExerciseView().tabItem { Label("Exercise", systemImage: "figure.run") }
@@ -17,16 +18,7 @@ struct ContentView: View {
                 }
             } else {
                 NavigationStack {
-                    Form {
-                        Section { Text("Your healthier future starts here.").font(.title2.bold()) }
-                        Section("What should we call you?") { TextField("Your name", text: $name) }
-                        Section("Your goal") { TextField("Feel fitter, build a routine…", text: $goal, axis: .vertical) }
-                        Button("Get started") {
-                            name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-                            goal = goal.trimmingCharacters(in: .whitespacesAndNewlines)
-                            complete = true
-                        }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }.navigationTitle("Longevity Simulator")
+                    ProfileSetupView(isOnboarding: true)
                 }
             }
         }
@@ -41,6 +33,9 @@ struct TodayView: View {
     @EnvironmentObject var store: AppStore
     @AppStorage("userName") private var name = ""
     @AppStorage("userGoal") private var goal = ""
+    @AppStorage("exerciseTargetMinutes") private var exerciseTarget = 150
+    @AppStorage("exerciseTargetPeriod") private var exercisePeriod = "Weekly"
+    @AppStorage("sleepTargetHours") private var sleepTarget = 8.0
     @State private var editing = false
     @State private var newTask = ""
     @State private var taskDate = Date()
@@ -52,6 +47,19 @@ struct TodayView: View {
                     Text(goal).foregroundStyle(.secondary)
                     let minutes = store.data.workouts.filter { Calendar.current.isDateInToday($0.date) }.reduce(0) { $0 + $1.minutes }
                     Text("\(minutes, specifier: "%.0f") minutes of activity recorded today")
+                }
+                Section("Your targets") {
+                    Text("Exercise: \(exerciseTarget) min / \(exercisePeriod == "Daily" ? "day" : "week")")
+                    Text("Sleep: \(sleepTarget, specifier: "%.1f") hours / night")
+                    let interval = exercisePeriod == "Daily"
+                        ? Calendar.current.dateInterval(of: .day, for: Date())
+                        : Calendar.current.dateInterval(of: .weekOfYear, for: Date())
+                    let total = store.data.workouts.filter { interval?.contains($0.date) == true }.reduce(0) { $0 + $1.minutes }
+                    if exerciseTarget > 0 {
+                        ProgressView(value: min(total, Double(exerciseTarget)), total: Double(exerciseTarget))
+                        Text("\(Int(total)) of \(exerciseTarget) minutes recorded this \(exercisePeriod == "Daily" ? "day" : "week")").font(.caption)
+                    }
+                    Text("Targets are your choices, not exercise or medical recommendations.").font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Today's plan") {
                     ForEach($store.data.tasks) { $task in
@@ -85,12 +93,84 @@ struct TodayView: View {
                 .onDisappear { store.save() }
                 .sheet(isPresented: $editing) {
                     NavigationStack {
-                        Form {
-                            TextField("Name", text: $name)
-                            TextField("Goal", text: $goal, axis: .vertical)
-                        }.navigationTitle("Your profile").toolbar { Button("Done") { editing = false } }
+                        ProfileSetupView(isOnboarding: false) { editing = false }
                     }
                 }
+        }
+    }
+}
+
+
+// Draft fields keep Cancel from changing the saved profile.
+struct ProfileSetupView: View {
+    let isOnboarding: Bool
+    var onSave: () -> Void = {}
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("profileComplete") private var complete = false
+    @AppStorage("profileSetupVersion") private var setupVersion = 0
+    @AppStorage("userName") private var savedName = ""
+    @AppStorage("userGoal") private var savedGoal = ""
+    @AppStorage("exerciseTargetMinutes") private var savedMinutes = 150
+    @AppStorage("exerciseTargetPeriod") private var savedPeriod = "Weekly"
+    @AppStorage("sleepTargetHours") private var savedSleep = 8.0
+    @State private var name = ""
+    @State private var goal = ""
+    @State private var minutes = 150
+    @State private var period = "Weekly"
+    @State private var sleep = 8.0
+    @State private var didLoad = false
+    private var valid: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    var body: some View {
+        Form {
+            Section {
+                Text("Build a routine that fits you.").font(.title2.bold())
+                Text("Choose your targets and describe what you want to accomplish. You can change everything later from Profile.")
+            }
+            Section("Your name") {
+                TextField("What should we call you?", text: $name).textContentType(.givenName)
+            }
+            Section("Exercise target") {
+                Picker("Track time", selection: $period) {
+                    Text("Daily").tag("Daily")
+                    Text("Weekly").tag("Weekly")
+                }.pickerStyle(.segmented)
+                Stepper("\(minutes) minutes per \(period == "Daily" ? "day" : "week")", value: $minutes, in: 0...(period == "Daily" ? 600 : 4200), step: 5)
+                Text("This is your total time target, not a requirement to exercise every day. Zero is allowed for a rest or recovery period.").font(.caption)
+            }
+            Section("Sleep target") {
+                Stepper("\(sleep, specifier: "%.1f") hours per night", value: $sleep, in: 3...14, step: 0.5)
+                Text("Choose a target appropriate for you; sleep needs vary by age and circumstances.").font(.caption)
+            }
+            Section("What would you like to accomplish?") {
+                TextField("Feel more motivated, improve stamina, build a routine…", text: $goal, axis: .vertical).lineLimit(3...6)
+            }
+            Section {
+                Button(isOnboarding ? "Save & get started" : "Save changes") {
+                    savedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                    savedGoal = goal.trimmingCharacters(in: .whitespacesAndNewlines)
+                    savedMinutes = minutes; savedPeriod = period; savedSleep = sleep
+                    setupVersion = 1; complete = true; onSave()
+                }.disabled(!valid)
+            }
+        }
+        .navigationTitle(isOnboarding ? "Your routine" : "Your profile")
+        .toolbar {
+            if !isOnboarding { Button("Cancel") { dismiss() } }
+        }
+        .onAppear {
+            guard !didLoad else { return }
+            name = savedName; goal = savedGoal; minutes = savedMinutes
+            period = savedPeriod; sleep = savedSleep
+            Task { @MainActor in didLoad = true }
+        }
+        .onChange(of: period) { _, new in
+            guard didLoad else { return }
+            // Preserve the approximate weekly amount when changing units.
+            if new == "Daily" { minutes = min(600, Int((Double(minutes) / 7 / 5).rounded()) * 5) }
+            else { minutes = min(4200, minutes * 7) }
         }
     }
 }
