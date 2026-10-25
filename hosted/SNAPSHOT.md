@@ -1,6 +1,6 @@
 # Current live app snapshot
 
-Source commit: `2ba0e772b23f9a947b9147d470e4810186beda8d`
+Source commit: `fad64887c3db7298dfbe1a5c09a4e8440cd08e03`
 
 Published app: https://longevity-simulator-lab.idealapple4.chatgpt.site/app
 
@@ -13,3 +13,5 @@ This snapshot includes the WHO-5 check-in, Exercise / Mental health / Sleep repo
 - Checks: `tests/` (some JavaScript checks require jsdom; Worker checks require Miniflare)
 
 This is a source backup. Runtime secrets and private user database records are not included. The Firebase client configuration is public app configuration, not a server credential. A native Xcode build and device verification still require a Mac/iPhone.
+
+Latest guest1 data: October 1–25 only, daily fictional WHO-5 scores, and only essential journal measurements. Repeated day notes removed; overall fictional-sample label retained. Optional input features remain available.

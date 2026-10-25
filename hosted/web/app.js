@@ -7,7 +7,7 @@ try {const saved=JSON.parse(localStorage.getItem(KEY));if(saved && typeof saved=
 // Fictional demonstration records, exclusively for the shared guest login.
 function seedGuestSample(){
  if(window.LONGEVITY_ACCOUNT?.provider!=='judge'||window.LONGEVITY_ACCOUNT.storageKey!=='judge-demo-v1')return;
- const marker=KEY+':sample40-october-v2';try{if(localStorage.getItem(marker))return;}catch{return;}
+ const marker=KEY+':sample40-october-v4';try{if(localStorage.getItem(marker))return;}catch{return;}
  const sample=JSON.parse(JSON.stringify(state)),today=new Date();today.setHours(12,0,0,0);
  sample.profile={...sample.profile,age:40,height:175,weight:72,sex:'male',personalGoals:'Fictional sample: stay active and maintain a consistent sleep routine.',lifeGoal:'Keep hiking and traveling at 65.',accessibilityNeeds:'Fictional sample: no adaptations requested.',challengePreference:'standard'};
  sample.baselineHabits={exercise:210,movementIntensity:'moderate',sleep:8,sleepRegularity:'consistent'};sample.habits={exercise:210,sleep:8};sample.baselineRecord={bed:'23:00',wake:'07:00'};
@@ -15,16 +15,16 @@ function seedGuestSample(){
  const minutes=[15,20,0,25,20,0,30,20,25,0,10,30,25,35,30,0,35,20,0,30,35,25,40,0,35,30,25,0,40,30,35];
  const sleep=[6.5,7,6,7.5,7,6.5,7.5,7,7.5,6,6.5,7.5,8,7.5,8,7,7.5,6.5,6,7.5,8,7.5,8,7,7.5,8,7,6.5,8,7.5,8];
  const setbacks={3:'Busy day; skipped the planned walk.',6:'Late work night and a rest day.',10:'Poor sleep after a late evening; took a rest day.',11:'Low energy; chose a shorter walk.',16:'Planned rest day.',18:'Busy schedule; shortened the walk.',19:'Travel day; exercise plan changed.',24:'Rest day after a longer walk.',28:'Late night; took a recovery day.'};
- // Populate October through today; never create future-dated journal entries.
+ // Populate the demo only through the current date.
  const last=localDate(today)>='2026-11-01'?31:localDate(today)>='2026-10-01'?today.getDate():0;
  for(let d=1;d<=last;d++){
   const i=d-1,date='2026-10-'+String(d).padStart(2,'0'),existing=sample.records.find(r=>r.date===date);
   if(existing&&!existing.sampleData)continue;
   const week=Math.floor(i/7),rest=minutes[i]===0,burn=Math.round(minutes[i]*4.5),steps=(rest?3800:4500+minutes[i]*85)+[200,-300,500,0,-200,350,-100][i%7];
   const bedMinutes=(7*60-Math.round(sleep[i]*60)+1440)%1440,bed=String(Math.floor(bedMinutes/60)).padStart(2,'0')+':'+String(bedMinutes%60).padStart(2,'0');
-  const record={date,bed,wake:'07:00',sleepHours:sleep[i],exerciseType:rest?'Rest day':'Brisk walking',exerciseIntensity:rest?'light':'moderate',duration:minutes[i],exerciseCalories:burn,steps,dailyActiveCalories:burn+180+[20,45,0,60,30,10,40][i%7],activeEnergyIncludesExercise:true,rested:sleep[i]>=7.5?4:sleep[i]>=7?3:2,energy:sleep[i]<7?2:rest?3:4,stress:setbacks[d]?6:Math.max(2,4-Math.floor(week/2)),dailyActivities:'manageable',notes:'FICTIONAL DEMO DATA — not real measurements. '+(setbacks[d]||'Building a consistent routine; normal daily variation.')+' Active-energy total includes exercise; calories are estimates, not targets.',sampleData:true};
-  // Occasional example measurements rather than pretending tests happen daily.
-  if([1,8,15,22,29].includes(d))Object.assign(record,{heart:[68,67,69,65,66][week],systolic:[120,118,121,117,119][week],diastolic:[78,77,79,76,77][week],glucose:[92,90,94,91,93][week]});
+  const record={date,bed,wake:'07:00',sleepHours:sleep[i],exerciseType:rest?'Rest day':'Brisk walking',exerciseIntensity:rest?'light':'moderate',duration:minutes[i],exerciseCalories:burn,steps,dailyActiveCalories:burn+180+[20,45,0,60,30,10,40][i%7],activeEnergyIncludesExercise:true,rested:sleep[i]>=7.5?4:sleep[i]>=7?3:2,energy:sleep[i]<7?2:rest?3:4,stress:setbacks[d]?6:Math.max(2,4-Math.floor(week/2)),dailyActivities:'manageable',notes:'FICTIONAL DEMO DATA — not real measurements. '+(setbacks[d]||'Building a consistent routine; normal daily variation.')+' Calories are estimates, not targets.',sampleData:true};
+  if(existing?.who5)record.who5=existing.who5;
+  if(date>localDate(today))record.notes+=' Future-dated fictional example for the demonstration.';
   sample.records=sample.records.filter(r=>r.date!==date);sample.records.push(record);
  }
  sample.records.sort((a,b)=>a.date.localeCompare(b.date));
@@ -39,7 +39,7 @@ function seedGuestMentalSample(){
  const sample=JSON.parse(JSON.stringify(state)),today=localDate();
  const examples=[['2026-10-01',[3,3,3,2,3]],['2026-10-15',[4,4,3,4,4]],['2026-10-29',[4,4,4,4,5]]];
  for(const [date,answers] of examples){
-  if(date>today)continue;
+  // All dates are fictional examples for October; WHO-5 assessment ignores future dates.
   let row=sample.records.find(r=>r.date===date);
   if(row?.who5||row&&!row.sampleData)continue;
   if(!row){row={date,sampleData:true};sample.records.push(row);}
@@ -50,6 +50,28 @@ function seedGuestMentalSample(){
  try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{/* Preserve existing state if storage is unavailable. */}
 }
 seedGuestMentalSample();
+// Remove only optional recorded values from the guest October demo, not their input features.
+function simplifyGuestOctober(){
+ if(window.LONGEVITY_ACCOUNT?.provider!=='judge'||window.LONGEVITY_ACCOUNT.storageKey!=='judge-demo-v1')return;
+ const marker=KEY+':october-essential-records-v2';try{if(localStorage.getItem(marker))return;}catch{return;}
+ const sample=JSON.parse(JSON.stringify(state));
+ const optional=['rested','energy','stress','systolic','diastolic','glucose','heart','bpmBefore','bpmAfter','dailyActivities','dailyActiveCalories','activeEnergyIncludesExercise'];
+ for(const row of sample.records){if(!row.date?.startsWith('2026-10-'))continue;for(const key of optional){delete row[key];if(row.inputSources)delete row.inputSources[key];}}
+ const today=localDate();
+ sample.records=sample.records.filter(row=>!(row.sampleData&&row.date?.startsWith('2026-10-')&&row.date>today));
+ for(const row of sample.records){
+  if(!row.sampleData||!row.date?.startsWith('2026-10-'))continue;
+  // Keep the overall fictional-sample notice rather than repeating notes in each day.
+  if(row.notes?.includes('FICTIONAL'))delete row.notes;
+  if(!row.who5||row.who5.sampleData){
+   const day=Number(row.date.slice(-2)),setback=[3,6,10,11,18,19,24].includes(day),base=day<8?3:4;
+   const answers=[base,base,setback?2:base,day<12||setback?2:4,day>20&&!setback?5:base];
+   row.who5={instrument:'WHO-5',version:'2024',recall:'past-two-weeks',answers,sampleData:true};
+  }
+ }
+ try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{/* Keep the previous state on storage failure. */}
+}
+simplifyGuestOctober();
 if(window.LONGEVITY_ACCOUNT?.provider==='judge'&&state.profile.personalGoals?.startsWith('Fictional sample:')){const note=document.createElement('p');note.className='note';note.textContent='Fictional October sample · age 40 · gradual progress with setbacks · not real measurements';document.querySelector('#home h1')?.after(note);}
 let timer, requestId=0, watchId=null;
 function toast(message){$('#toast').textContent=message;$('#toast').style.display='block';clearTimeout(timer);timer=setTimeout(()=>$('#toast').style.display='none',5000);}
