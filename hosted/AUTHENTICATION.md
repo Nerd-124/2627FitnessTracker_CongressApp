@@ -1,19 +1,15 @@
-# Hosted authentication
+# Google authentication
 
-The hosted app uses Sites-owned ChatGPT sign-in. `/` shows the welcome/sign-in screen; `/app` requires visitor identity, and all application scripts/data-model assets are protected server-side. `/api/account` returns the authenticated display identity and a stable account-specific browser-storage namespace. Missing identity gets a 401 or a top-level sign-in redirect.
+The application uses Firebase Authentication for Google sign-in. Its entry/login pages are public; `/app`, `/api/account`, and coach status require a verified Google Firebase session. ChatGPT identity headers do not authenticate application users.
 
-The platform owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, and `/callback`; no passwords, separate OAuth flow, or session cookies are implemented by the app. Do not deploy this Worker outside Sites without adding an identity-verifying gateway: the `oai-authenticated-user-*` headers are trusted only behind Sites dispatch.
+Browser: Firebase's official browser SDK opens a Google popup, receives a Firebase ID token, and posts it as JSON to `/api/auth/session`. Native iOS: the official Google Sign-In SDK opens the system authentication session, signs in through FirebaseAuth, and exchanges the Firebase ID token with the same server endpoint. The session cookie is installed in WKWebView's cookie store without injecting tokens into page JavaScript.
 
-Sign-in is not an invitation. The Site's owner-private audience remains unchanged. Additional visitors require an explicit sharing/invitation change. New invited users sign in through ChatGPT and then create their app profile.
+The Worker uses Firebase Authentication's official `accounts:lookup` REST endpoint to verify the token. It also checks issuer, audience/project, algorithm, expiry, authentication time, verified email, Google provider, user ID, disabled status, and `validSince` revocation time. Decoding a JWT is never sufficient. Successful verifications are cached by token hash for at most 60 seconds and never beyond expiration. An unavailable verifier fails closed with 503. The public Firebase app/API configuration is not an admin credential; no service account is embedded.
 
-Health records remain in localStorage on this browser, with a distinct namespace derived from the authenticated site-scoped user ID. This is separation, not encryption or cloud storage. Signing out ends the hosted session and hides the app, but does not delete browser records. Use the existing delete/export controls on a private device. The app locks for session verification on tab visibility changes and requires reload if records change in another tab.
+Sessions use a host-only `__Host-longevity-google` cookie with Secure, HttpOnly, SameSite=Lax, Path=/, and at most one-hour lifetime. The native SDK refreshes it on foregrounding and periodically. Browser Firebase can re-establish a session on returning to login. JSON-only/same-origin checks protect session changes. Logout clears the cookie; the browser/native SDK also signs out. Session tokens are not logged or included in HTML or response bodies.
 
-Older unscoped records are not automatically assigned to any account. The account panel offers an import requiring confirmation that the records belong to the signed-in user. The legacy copy is preserved. Account-specific deletion removes only that account's namespace.
+Google UID namespaces local storage; health records stay in the device/browser, not Firebase. This does not add health-record cloud synchronization. Old ChatGPT storage namespaces remain untouched and are not automatically reassigned. Account changes and cross-tab record edits pause the app and require reload.
 
-The local Python prototype is still a local-only development edition without authentication. This change protects the hosted app. Python calculations in the hosted edition continue to run with Pyodide inside the authenticated browser.
+Hosting access must permit the public Google login page; app-level verification still protects simulator entry. This change was requested to replace ChatGPT login with Google for app users. No connected-app permissions or member invitation emails are involved.
 
-## Source and build
-
-Edit `web/` for the browser app and `worker/server-template.js` for the authenticated request handler. `node scripts/build.mjs` embeds the web assets into `worker/index.js`, validates the ES-module fetch export, and packages `dist/server/index.js` with `.openai/hosting.json`. No D1 or R2 bindings are used.
-
-Checks cover unsigned access, protected assets, distinct/stable account IDs, inline bootstrap escaping, cache policy, account-scoped saving, explicit legacy-import confirmation, and wrong-session locking. Existing onboarding and feature checks pass. Browser OAuth/sign-out end-to-end testing was unavailable in the execution environment.
+Dependencies/verification: web Firebase JS 11.10.0; native Swift Package Manager Firebase SDK 12.x and GoogleSignIn 9.x. Native client bundle identifier and URL scheme must match the Firebase plist. Tests use a mocked Firebase verifier to test trust boundaries; they do not claim a real Google login or Xcode build was exercised in Linux.

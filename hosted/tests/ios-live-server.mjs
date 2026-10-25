@@ -1,0 +1,13 @@
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+if(!globalThis.crypto)globalThis.crypto=webcrypto;
+const source=await fs.readFile(new URL('../worker/index.js',import.meta.url),'utf8');
+const worker=(await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'))).default;
+const headers={};
+const res=await worker.fetch(new Request('https://site.test/LongevitySimulator-Xcode.zip',{headers}));assert.equal(res.status,200);assert.equal(res.headers.get('content-type'),'application/zip');assert.match(res.headers.get('content-disposition'),/attachment/);
+assert.deepEqual(Buffer.from(await res.arrayBuffer()),await fs.readFile(new URL('../web/LongevitySimulator-Xcode.zip',import.meta.url)));
+const head=await worker.fetch(new Request('https://site.test/LongevitySimulator-Xcode.zip',{headers,method:'HEAD'}));assert.equal(head.status,200);assert.equal((await head.arrayBuffer()).byteLength,0);
+const page=await worker.fetch(new Request('https://site.test/xcode-export.html',{headers}));assert.equal(page.status,200);assert((await page.text()).includes('LongevityLive.xcodeproj'));
+assert.equal((await worker.fetch(new Request('https://site.test/app'))).status,302,'Existing app authentication remains required');
+console.log('PASS: public Xcode download page/ZIP, correct bytes and filename, HEAD support, and Google sign-in required for app');

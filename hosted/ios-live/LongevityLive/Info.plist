@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.387370240693-57aussuka2jlucluemrlh4rkdqg82q00</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>longevitylive</string>
+			</array>
+		</dict>
+	</array>
+	<key>FirebaseAnalyticsCollectionEnabled</key>
+	<false/>
+	<key>FirebaseAutomaticScreenReportingEnabled</key>
+	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a selfie for your optional personal portrait. Photos are processed on this device unless you choose account sync.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Count daily steps from your iPhone and add them to your Steps journal when you enable step importing.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a photo for your optional personal portrait.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+</dict>
+</plist>

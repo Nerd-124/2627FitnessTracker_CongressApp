@@ -133,10 +133,11 @@ function plannerInitialView(plan){const today=localDate();return today<plan.star
 function plannerCheckin(plan,task,date,checked){
  if(date>localDate())throw Error('Check in on or after the action date.');
  if(!plannerTaskScheduled(task,date,plan))throw Error('This action is not scheduled for that date.');
- const updated=plannerClone(plan),key=date+':'+task.id;if(checked)updated.checkins[key]=new Date().toISOString();else delete updated.checkins[key];
+ const updated=plannerClone(plan),key=date+':'+task.id;updated.autoCheckins=updated.autoCheckins||{};updated.autoDismissed=updated.autoDismissed||{};delete updated.autoCheckins[key];if(checked)delete updated.autoDismissed[key];else updated.autoDismissed[key]=true;if(checked)updated.checkins[key]=new Date().toISOString();else delete updated.checkins[key];
  updated.updatedAt=new Date().toISOString();savePlannerState(state.plans.map(p=>p.id===plan.id?updated:p),plan.id);renderPlanner();
 }
 function renderPlanner(){
+ if(!$('#planner-select'))return;
  const plan=activePlanner(),selector=$('#planner-select');selector.replaceChildren();
  for(const p of state.plans){const opt=document.createElement('option');opt.value=p.id;opt.textContent=p.title+' · '+p.start;selector.append(opt);}
  if(plan)selector.value=plan.id;
@@ -162,7 +163,7 @@ function renderPlanner(){
    const label=document.createElement('label');label.className='planner-checkin';
    const input=document.createElement('input');input.type='checkbox';input.checked=!!plan.checkins[date+':'+task.id];input.disabled=date>localDate();input.setAttribute('aria-label',`${task.title}, ${date}`);
    const text=document.createElement('span');text.textContent=task.title;label.append(input,text);
-   if(task.minutes){const small=document.createElement('small');small.textContent=task.minutes+' min';label.append(small);}
+   if(task.minutes){const small=document.createElement('small');small.textContent=task.minutes+' min'+(plan.autoCheckins?.[date+':'+task.id]?' · Recorded':'');label.append(small);}
    const actionDate=date;input.onchange=()=>{try{plannerCheckin(plan,task,actionDate,input.checked);}catch(error){input.checked=!input.checked;$('#planner-status').textContent=error.message;}};
    day.append(label);
   }
@@ -189,7 +190,7 @@ function initializePlanner(){
   const old=state.plans.find(p=>p.id===plan.id),lost=old?Object.keys(old.checkins).length-Object.keys(plan.checkins).length:0;
   if(lost>0&&!confirm(`These schedule changes remove ${lost} check-ins for replaced or unscheduled actions. Save these changes?`))return;
   savePlannerState([...state.plans.filter(p=>p.id!==plan.id),plan],plan.id);
-  plannerDraft=null;plannerViewStart=plannerInitialView(plan);$('#planner-draft').hidden=true;$('#planner-builder').hidden=true;renderPlanner();$('#planner-status').textContent='Your plan is saved. Edit it whenever life changes.';$('#planner-active').scrollIntoView?.({behavior:'smooth',block:'start'});
+  syncPlannerExercise();plannerDraft=null;plannerViewStart=plannerInitialView(plan);$('#planner-draft').hidden=true;$('#planner-builder').hidden=true;renderPlanner();$('#planner-status').textContent='Your plan is saved. Edit it whenever life changes.';$('#planner-active').scrollIntoView?.({behavior:'smooth',block:'start'});
  }catch(error){$('#planner-status').textContent=error.message;}};
  $('#planner-draft-cancel').onclick=()=>$('#planner-cancel').click();
  $('#planner-keep-actions').onclick=()=>{try{if(!plannerDraft)return;const settings=plannerReadForm();plannerDraft={...plannerDraft,...settings};plannerDraft.reasons.push('Plan goals or dates were edited on '+localDate()+'. Actions were kept for your review.');plannerShowDraft();$('#planner-status').textContent='Goals updated in your draft. Review actions and save when ready.';}catch(error){$('#planner-status').textContent=error.message;}};
@@ -197,10 +198,103 @@ function initializePlanner(){
  $('#planner-edit').onclick=()=>{const plan=activePlanner();if(!plan)return;plannerDraft=plannerClone(plan);plannerFillForm(plan);$('#planner-keep-actions').hidden=false;$('#planner-cancel').hidden=false;plannerShowDraft();};
  $('#planner-back').onclick=()=>{plannerSyncTaskEditors();$('#planner-keep-actions').hidden=false;$('#planner-builder').hidden=false;$('#planner-draft').hidden=true;$('#planner-cancel').hidden=!state.plans.length;};
  $('#planner-cancel').onclick=()=>{plannerDraft=null;$('#planner-builder').hidden=!!activePlanner();$('#planner-draft').hidden=true;renderPlanner();$('#planner-status').textContent='Unsaved changes discarded.';};
- $('#planner-select').onchange=()=>{try{if(plannerDraft&&!confirm('Discard unsaved changes and switch plans?')){$('#planner-select').value=activePlanner()?.id||'';return;}savePlannerState(state.plans,$('#planner-select').value);plannerDraft=null;plannerViewStart=null;$('#planner-builder').hidden=true;$('#planner-draft').hidden=true;renderPlanner();}catch(error){$('#planner-status').textContent=error.message;}};
+ $('#planner-select').onchange=()=>{try{if(plannerDraft&&!confirm('Discard unsaved changes and switch plans?')){$('#planner-select').value=activePlanner()?.id||'';return;}savePlannerState(state.plans,$('#planner-select').value);syncPlannerExercise();plannerDraft=null;plannerViewStart=null;$('#planner-builder').hidden=true;$('#planner-draft').hidden=true;renderPlanner();}catch(error){$('#planner-status').textContent=error.message;}};
  $('#planner-delete').onclick=()=>{const plan=activePlanner();if(!plan||!confirm(`Delete ${plan.title} and its check-ins? Your journal and exercise records will be kept.`))return;try{const plans=state.plans.filter(p=>p.id!==plan.id);savePlannerState(plans,plans[0]?.id||null);plannerDraft=null;plannerViewStart=null;$('#planner-builder').hidden=!!plans.length;$('#planner-draft').hidden=true;renderPlanner();$('#planner-status').textContent='Plan deleted. Other health records were kept.';}catch(error){$('#planner-status').textContent=error.message;}};
  $('#planner-prev').onclick=()=>{const plan=activePlanner();plannerViewStart=plannerDateAdd(plannerViewStart,-7);if(plannerViewStart<plan.start)plannerViewStart=plan.start;renderPlanner();};
  $('#planner-next').onclick=()=>{plannerViewStart=plannerDateAdd(plannerViewStart,7);renderPlanner();};
  $('#planner-today').onclick=()=>{plannerViewStart=plannerInitialView(activePlanner());renderPlanner();};
- renderPlanner();
+ syncPlannerExercise();renderPlanner();
+}
+
+// Automatic check-ins retain provenance so deleting/discarding evidence can undo
+// an automatic completion without touching deliberate manual check-ins.
+let plannerExerciseSyncing=false;
+function plannerExerciseKind(title){
+ const text=String(title||'').toLowerCase();
+ if(/\b(run|running|jog|jogging)\b/.test(text))return 'running';
+ if(/\b(swim|swimming)\b/.test(text))return 'swimming';
+ if(/\bbasketball\b/.test(text))return 'basketball';
+ if(/\b(cycling|cycle|bike|biking)\b/.test(text))return 'cycling';
+ if(/\b(strength|bodyweight|weightlifting|weights)\b/.test(text))return 'strength';
+ if(/\b(yoga|mobility|stretch|stretching)\b/.test(text))return 'yoga';
+ if(/\b(dance|dancing)\b/.test(text))return 'dancing';
+ if(/\b(walk|walking|hike|hiking)\b/.test(text))return 'walking';
+ return null;
+}
+function plannerExerciseRequirement(task){
+ if(task.category!=='move')return null;
+ const title=String(task.title||'');
+ // These need verification beyond the tracker, so leave them to manual check-in.
+ if(/\b(under|faster than|pace|bpm|heart rate|reps|sets|continuous|without stopping)\b|\d\s*[:/x×]\s*\d/.test(title))return null;
+ const kind=plannerExerciseKind(title);if(!kind)return null;
+ let minutes=Number(task.minutes)||0;
+ if(!minutes){const match=title.match(/\b(\d+(?:\.\d+)?)\s*(?:min|minutes?)\b/i);if(match)minutes=Number(match[1]);}
+ const distance=title.match(/\b(\d+(?:\.\d+)?)\s*(km|k|kilometers?|kilometres?|miles?|mi|meters?|metres?)\b/i);
+ const meters=distance?Number(distance[1])*(/^(k|kilo)/i.test(distance[2])?1000:/^(mi)/i.test(distance[2])?RunMath.mile:1):0;
+ if(!minutes&&!meters)return null;
+ return {kind,minutes,meters};
+}
+function plannerExerciseEvidence(){
+ const map=new Map();
+ for(const s of [...state.activities,...state.workouts]){
+  const kind=s.mode?(s.mode==='run'?'running':'walking'):plannerExerciseKind(s.sport==='other'?s.customName:s.sport);
+  if(!kind||!validSleepDate(s.date)||s.date>localDate()||!Number.isFinite(Number(s.minutes))||Number(s.minutes)<=0)continue;
+  const meters=s.mode?(s.route?.length>1?RunMath.analyze(s.route).distance:Number(s.result?.distance||0)*1000):Number(s.distance||0)*1000;
+  map.set(s.id,{id:s.id,date:s.date,kind,minutes:Number(s.minutes),meters:Math.max(0,meters||0),live:false});
+ }
+ if(activeRun?.points?.length){
+  const analysis=runAnalysis||RunMath.analyze(activeRun.points,currentRunSeconds());
+  // A running timer without a measured route is not evidence of a run.
+  if(analysis.distance>=10&&currentRunSeconds()>0&&!map.has(activeRun.id))map.set(activeRun.id,{id:activeRun.id,date:activeRun.date,kind:activeRun.mode==='run'?'running':'walking',minutes:currentRunSeconds()/60,meters:analysis.distance,live:true});
+ }
+ return [...map.values()];
+}
+function syncPlannerExercise(){
+ // My Plan is retired. Historical plans stay in local storage without updates.
+ if(!$('#planner'))return;
+ if(plannerExerciseSyncing||!state.plans.length||!exerciseCanSave())return;
+ plannerExerciseSyncing=true;
+ try{
+  const current=activePlanner(),evidence=plannerExerciseEvidence();let changed=false,liveCompleted=false;
+  const plans=state.plans.map(original=>{
+   const plan=plannerClone(original);plan.autoCheckins=plan.autoCheckins||{};plan.autoDismissed=plan.autoDismissed||{};
+   const candidates=new Map();
+   const dates=new Set([...evidence.map(e=>e.date),...Object.keys(plan.autoCheckins).map(k=>k.slice(0,10))]);
+   for(const date of dates){
+    if(date>localDate()||date<plan.start||date>plan.end)continue;
+    const pools=new Map();
+    for(const entry of evidence.filter(e=>e.date===date)){
+     if(!pools.has(entry.kind))pools.set(entry.kind,{minutes:0,meters:0,ids:[],live:false});
+     const pool=pools.get(entry.kind);pool.minutes+=entry.minutes;pool.meters+=entry.meters;pool.ids.push(entry.id);pool.live||=entry.live;
+    }
+    for(const task of plan.tasks){
+     const key=date+':'+task.id;
+     if(!plannerTaskScheduled(task,date,plan)||plan.autoDismissed[key]||(plan.checkins[key]&&!plan.autoCheckins[key]))continue;
+     const requirement=plannerExerciseRequirement(task);if(!requirement)continue;
+     const pool=pools.get(requirement.kind);if(!pool)continue;
+     const enough=pool.minutes+1e-8>=requirement.minutes&&pool.meters+1e-5>=requirement.meters;
+     if(enough&&(plan.id===current?.id||plan.autoCheckins[key])){
+      candidates.set(key,{sessionIds:[...pool.ids].sort(),kind:requirement.kind,minutes:requirement.minutes,meters:requirement.meters});
+      if(pool.live&&plan.id===current?.id&&date===localDate())liveCompleted=true;
+     }
+     // Reserve this task's share before another task of the same kind.
+     const share=Math.min(1,Math.max(requirement.minutes?requirement.minutes/Math.max(pool.minutes,1e-9):0,requirement.meters?requirement.meters/Math.max(pool.meters,1e-9):0));
+     pool.minutes*=1-share;pool.meters*=1-share;
+    }
+   }
+   for(const key of Object.keys(plan.autoCheckins))if(!candidates.has(key)){
+    delete plan.autoCheckins[key];delete plan.checkins[key];changed=true;
+   }
+   for(const [key,match]of candidates){
+    if(!plan.checkins[key]){plan.checkins[key]=new Date().toISOString();changed=true;}
+    if(JSON.stringify(plan.autoCheckins[key])!==JSON.stringify(match)){plan.autoCheckins[key]=match;changed=true;}
+   }
+   return plan;
+  });
+  const notice=$('#run-plan-progress');
+  if(notice){notice.hidden=!activeRun||!liveCompleted;notice.textContent='✓ Today’s matching plan task is complete';}
+  if(changed){savePlannerState(plans,state.plannerActiveId);renderPlanner();}
+ }catch(error){
+  const notice=$('#run-plan-progress');if(notice){notice.hidden=false;notice.textContent='Plan check-off could not be saved. Your run can continue.';}
+ }finally{plannerExerciseSyncing=false;}
 }

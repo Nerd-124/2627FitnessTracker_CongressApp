@@ -33,13 +33,14 @@ function validateWorkout(values){
  const distance=values.distance===''||values.distance==null?null:Number(values.distance);
  if(distance!==null&&(!Number.isFinite(distance)||distance<0||distance>500))throw Error('Distance must be from 0 to 500 km, or left blank.');
  const notes=(values.notes||'').trim();if(notes.length>2000)throw Error('Keep workout notes under 2,000 characters.');
- return {sport,date:values.date,minutes,intensity:values.intensity,customName:sport==='other'?customName:'',distance,notes};
+ return {sport,date:values.date,minutes,intensity:values.intensity,customName:sport==='other'?customName:'',distance,notes,...validateExerciseVitals(values)};
 }
+function openExercisePastLog(){renderSessions();$('#exercise-history-details').hidden=false;openAppPage('exercise-log');}
 function showExerciseTool(tool){
- if(tool==='workouts'&&runIsActive())pauseRun('GPS paused while you log another workout. Return to Outdoor GPS and Resume to continue.');
- $('#exercise-gps-panel').hidden=tool!=='gps';$('#exercise-workouts-panel').hidden=tool!=='workouts';
- for(const kind of ['gps','workouts']){const button=$('#exercise-show-'+kind);button.classList.toggle('active',kind===tool);button.setAttribute('aria-pressed',String(kind===tool));}
- if(tool==='gps')ensureRunnerMap();
+ if(tool==='history'){openExercisePastLog();return;}
+ $('#exercise-gps-panel').hidden=tool!=='gps';$('#exercise-workouts-panel').hidden=tool!=='workouts';$('#exercise-history-details').hidden=tool!=='history';
+ for(const kind of ['gps','workouts','history']){const button=$('#exercise-show-'+kind);button.classList.toggle('active',kind===tool);button.setAttribute('aria-pressed',String(kind===tool));}
+ if(tool==='gps'){ensureRunnerMap();if(routePlanning)renderPlannedRoute();else drawRunRoute();}syncExerciseChoices();
 }
 function previewWorkout(){
  const form=$('#workout-form'),sport=typedWorkoutType(form.elements.sport.value);
@@ -50,27 +51,28 @@ function previewWorkout(){
 }
 function resetWorkoutForm(){
  workoutEditing=null;const form=$('#workout-form');form.reset();form.dataset.dirty='false';form.elements.date.value=localDate();
- $('#workout-cancel-edit').hidden=true;$('#workout-form-title').textContent='Log a workout';previewWorkout();
+ $('#workout-cancel-edit').hidden=true;$('#workout-form-title').textContent='Log a workout';previewWorkout();syncExerciseChoices();
 }
 function editWorkout(record){
  if($('#workout-form').dataset.dirty==='true'&&!confirm('Discard unsaved workout changes?'))return;
  workoutEditing=record.id;
  const form=$('#workout-form');
- for(const key of ['sport','date','minutes','intensity','customName','distance','notes'])form.elements.namedItem(key).value=key==='sport'?workoutLabel(record):record[key]??'';
+ for(const key of ['sport','date','minutes','intensity','customName','distance','notes','temperature','bpmBefore','bpmAfter'])form.elements.namedItem(key).value=key==='sport'?workoutLabel(record):record[key]??'';
  $('#workout-estimate').checked=record.calories!==null;
  form.dataset.dirty='false';$('#workout-form-title').textContent='Edit your workout';$('#workout-cancel-edit').hidden=false;
- $('#workout-status').textContent='Editing this session. Save to replace it.';previewWorkout();showExerciseTool('workouts');form.scrollIntoView?.({behavior:'smooth',block:'start'});
+ $('#workout-status').textContent='Editing this session. Save to replace it.';previewWorkout();syncExerciseChoices();showExerciseTool('workouts');openAppPage('activity');form.scrollIntoView?.({behavior:'smooth',block:'start'});
 }
 function workoutLabel(record){return record.sport==='other'?record.customName:workoutTypes[record.sport]?.label||'Workout';}
 function writeWorkoutList(next){
  if(!exerciseCanSave())throw Error('Reconnect or reload your account before saving.');
  const previous=state.workouts;state.workouts=next;
- try{localStorage.setItem(KEY,JSON.stringify(state));}catch{state.workouts=previous;throw Error('Not saved: browser storage is full or unavailable. Export your data and try again.');}
+ try{localStorage.setItem(KEY,JSON.stringify(state));if(typeof scheduleProgressSync==='function')scheduleProgressSync();}catch{state.workouts=previous;throw Error('Not saved: browser storage is full or unavailable. Export your data and try again.');}
 }
 function exerciseDays(){
  const days=[];for(let i=6;i>=0;i--){const d=journalDayDate(localDate());d.setDate(d.getDate()-i);days.push(localDate(d));}return days;
 }
 function renderExerciseProgress(){
+ syncPlannerExercise();
  const days=exerciseDays();
  const sessions=[...state.activities.map(r=>({date:r.date,minutes:Number(r.minutes),calories:r.result?.calories})),...state.workouts];
  const week=sessions.filter(r=>days.includes(r.date)&&Number.isFinite(r.minutes)&&r.minutes>0);
@@ -97,11 +99,11 @@ function renderExerciseProgress(){
   const actions=document.createElement('span');const edit=document.createElement('button');edit.type='button';edit.className='text-button';edit.textContent='Edit';edit.onclick=()=>editWorkout(r);
   const remove=document.createElement('button');remove.type='button';remove.className='text-button';remove.textContent='Remove';remove.onclick=()=>{
    if(!confirm(`Remove ${workoutLabel(r)} on ${r.date}?`))return;
-   try{writeWorkoutList(state.workouts.filter(item=>item.id!==r.id));if(workoutEditing===r.id)resetWorkoutForm();renderExerciseProgress();$('#workout-status').textContent='Workout removed.';}catch(error){$('#workout-status').textContent=error.message;}
+   try{writeWorkoutList(state.workouts.filter(item=>item.id!==r.id));if(workoutEditing===r.id)resetWorkoutForm();renderExerciseProgress();renderJournal();$('#workout-status').textContent='Workout removed.';}catch(error){$('#workout-status').textContent=error.message;}
   };
   actions.append(edit,remove);heading.append(name,actions);
   const details=document.createElement('p');details.textContent=`${r.minutes} min · ${r.intensity} effort${r.distance!==null?' · '+r.distance+' km':''} · ${r.calories==null?'Calories not estimated':r.calories+' estimated kcal'}`;
-  card.append(heading,details);
+  card.append(heading,details);appendExerciseVitals(card,r);
   if(r.notes){const notes=document.createElement('p');notes.textContent=r.notes;card.append(notes);}
   if(r.calories!==null){const note=document.createElement('p');note.className='note';note.textContent=`Estimate uses ${r.met} MET and ${r.weight} kg at the time of saving.`;card.append(note);}
   history.append(card);
@@ -111,7 +113,7 @@ function initializeWorkouts(){
  const form=$('#workout-form');
  // Activity is a free-text input; no dropdown limits what can be recorded.
  form.elements.date.max=localDate();
- $('#exercise-show-gps').onclick=()=>showExerciseTool('gps');$('#exercise-show-workouts').onclick=()=>showExerciseTool('workouts');
+ initializeExerciseChoices();$('#exercise-log-back').onclick=()=>{openAppPage('activity');showExerciseTool('gps');};$('#exercise-show-history').onclick=()=>showExerciseTool('history');$('#exercise-show-gps').onclick=()=>showExerciseTool('gps');$('#exercise-show-workouts').onclick=()=>showExerciseTool('workouts');
  form.addEventListener('input',()=>{form.dataset.dirty='true';previewWorkout();});form.addEventListener('change',previewWorkout);
  form.onsubmit=e=>{
   e.preventDefault();try{
@@ -120,13 +122,34 @@ function initializeWorkouts(){
    const met=$('#workout-estimate').checked?workoutTypes[values.sport].met?.[values.intensity]??null:null;
    const calories=met===null?null:workoutEstimate(values.sport,values.intensity,values.minutes,weight);
    const previous=state.workouts.find(r=>r.id===workoutEditing),id=workoutEditing||crypto.randomUUID();
-   const record={...values,id,weight,met,calories,source:'manual-workout',createdAt:previous?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+   const record={...values,id,weight,met,calories,source:'manual-workout',temperatureSource:values.temperature===null?null:'manual',createdAt:previous?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
    writeWorkoutList([...state.workouts.filter(r=>r.id!==id),record]);
-   resetWorkoutForm();form.dataset.dirty='false';renderExerciseProgress();$('#workout-status').textContent=`Saved ${workoutLabel(record)} · ${record.minutes} minutes. Your weekly progress is updated.`;toast('Workout saved.');
+   resetWorkoutForm();form.dataset.dirty='false';renderExerciseProgress();renderJournal();$('#workout-status').textContent=`Saved ${workoutLabel(record)} · ${record.minutes} minutes. Your weekly progress is updated.`;toast('Workout saved.');
   }catch(error){$('#workout-status').textContent=error.message;}
  };
  $('#workout-cancel-edit').onclick=()=>{if(form.dataset.dirty==='true'&&!confirm('Discard unsaved workout changes?'))return;resetWorkoutForm();form.dataset.dirty='false';$('#workout-status').textContent='Editing cancelled.';};
  $('#workout-history-range').onchange=renderExerciseProgress;
  const previous=renderSessions;renderSessions=function(){previous();renderExerciseProgress();};
  resetWorkoutForm();renderExerciseProgress();
+}
+
+function validateExerciseVitals(values){
+ const read=(key,label,min,max,integer=false)=>{
+  if(values[key]==null||String(values[key]).trim()==='')return null;
+  const value=Number(values[key]);
+  if(!Number.isFinite(value)||value<min||value>max||(integer&&!Number.isInteger(value)))throw Error(`${label} must be ${integer?'a whole number ':''}from ${min} to ${max}, or left blank.`);
+  return value;
+ };
+ return {temperature:read('temperature','Air temperature (°C)',-60,65),bpmBefore:read('bpmBefore','Before-exercise BPM',20,300,true),bpmAfter:read('bpmAfter','After-exercise BPM',20,300,true)};
+}
+function exerciseVitalsText(session){
+ const parts=[];
+ if(Number.isFinite(session.temperature))parts.push(`${session.temperature} °C${session.temperatureSource==='open-meteo'?' · weather estimate':''}`);
+ if(Number.isFinite(session.bpmBefore))parts.push(`Before: ${session.bpmBefore} bpm`);
+ if(Number.isFinite(session.bpmAfter))parts.push(`After: ${session.bpmAfter} bpm`);
+ return parts.join(' · ');
+}
+function appendExerciseVitals(parent,session){
+ const text=exerciseVitalsText(session);if(!text)return;
+ const p=document.createElement('p');p.className='exercise-saved-vitals';p.textContent=text;parent.append(p);
 }

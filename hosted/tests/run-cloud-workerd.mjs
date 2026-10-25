@@ -1,0 +1,32 @@
+const {Miniflare}=await import(process.env.MINIFLARE_MODULE||'miniflare');
+import {readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {token,googleLookup} from './helpers/google-auth.mjs';
+const mf=new Miniflare({modules:true,script:readFileSync(new URL('../dist/server/index.js',import.meta.url),'utf8'),compatibilityDate:'2025-09-01',d1Databases:['DB'],bindings:{JUDGE_SESSION_SECRET:'test-only-run-storage-signing-key-which-is-not-production'},outboundService:async request=>{const {idToken}=await request.json();const claims=JSON.parse(Buffer.from(idToken.split('.')[1],'base64url'));return googleLookup({localId:claims.sub,email:claims.sub+'@example.test'})}});
+const base='https://site.test';
+const request=(path,cookie,method='GET',body,origin=base)=>mf.dispatchFetch(base+path,{method,headers:{...(cookie?{Cookie:cookie}:{}),Origin:origin,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+const signIn=async sub=>{const r=await request('/api/auth/session',null,'POST',{idToken:token({sub})});assert.equal(r.status,200);return r.headers.getSetCookie()[0].split(';')[0]};
+try{
+ await (await mf.getD1Database('DB')).exec(readFileSync(new URL('../migrations/0000_run_sessions.sql',import.meta.url),'utf8'));
+ await (await mf.getD1Database('DB')).exec(readFileSync(new URL('../migrations/0001_account_progress.sql',import.meta.url),'utf8'));
+ assert.equal((await request('/api/runs')).status,401);const a=await signIn('runner-a'),b=await signIn('runner-b');
+ const run={id:'same-run-id',date:'2026-10-24',mode:'run',minutes:10,weight:70,route:[{lat:32,lon:-93,ele:30,elapsed:0},{lat:32.001,lon:-93,ele:35,elapsed:600}],result:{distance:.111,speed:.666,gain:5,calories:30}};
+ const put=await request('/api/runs/'+run.id,a,'PUT',{revision:0,run});assert.equal(put.status,200,await put.clone().text());assert.equal((await put.json()).revision,1);assert.equal((await (await request('/api/runs',a)).json()).runs.length,1);assert.equal((await (await request('/api/runs',b)).json()).runs.length,0);assert.equal((await request('/api/runs/'+run.id,b)).status,404);
+ assert.equal((await request('/api/runs/'+run.id,a,'PUT',{revision:0,run})).status,409);const update=await request('/api/runs/'+run.id,a,'PUT',{revision:1,run:{...run,bpmAfter:130}});assert.equal(update.status,200);assert.equal((await (await request('/api/runs/'+run.id,a)).json()).run.bpmAfter,130);
+ assert.equal((await request('/api/runs/'+run.id,a,'DELETE',{revision:1})).status,409);assert.equal((await request('/api/runs/'+run.id,a,'DELETE',{revision:2})).status,200);assert.equal((await (await request('/api/runs/'+run.id,a)).json()).deleted,true);assert.equal((await request('/api/runs/'+run.id,a,'PUT',{revision:0,run})).status,409);
+ assert.equal((await request('/api/runs/'+run.id,b,'PUT',{revision:0,run})).status,200,'Same id on a different verified account is independent');
+ assert.equal((await request('/api/runs/'+run.id,b,'PUT',{revision:1,run},'https://evil.test')).status,403);assert.equal((await request('/api/runs/bad',a,'PUT',{revision:0,run:{...run,id:'bad',route:[{lat:999,lon:0}]}})).status,400);
+ const guest=await request('/api/auth/judge',null,'POST',{username:'guest1',password:'1234'});const guestCookie=guest.headers.getSetCookie()[0].split(';')[0];assert.equal((await request('/api/runs',guestCookie)).status,403,'Shared guest accounts never expose server routes');
+ assert.equal((await request('/api/progress')).status,401);assert.equal((await request('/api/progress',guestCookie)).status,403);
+ const entry={date:'2026-10-24',notes:'Private journal',sleepHours:8};
+ assert.equal((await request('/api/progress/record%3A2026-10-24',a,'PUT',{revision:0,value:entry})).status,200);
+ assert.equal((await (await request('/api/progress',b)).json()).documents.length,0);
+ assert.equal((await request('/api/progress/record%3A2026-10-24',b)).status,404);
+ assert.equal((await (await request('/api/progress/record%3A2026-10-24',a)).json()).value.notes,'Private journal');
+ assert.equal((await request('/api/progress/record%3A2026-10-24',a,'PUT',{revision:0,value:entry})).status,409);
+ assert.equal((await request('/api/progress/record%3A2026-10-24',a,'DELETE',{revision:1})).status,200);
+ assert.equal((await (await request('/api/progress/record%3A2026-10-24',a)).json()).deleted,true);
+ assert.equal((await request('/api/progress/profile%3Aname',a,'PUT',{revision:0,value:'Name'},'https://evil.test')).status,403);
+ console.log('PASS private progress D1 isolation, revisions, deletion, Google-only identity and CSRF');
+ console.log('PASS actual D1/workerd: per-Google-account route isolation, reads, CAS updates, tombstone deletes, CSRF, validation and guest exclusion');
+}finally{await mf.dispose()}

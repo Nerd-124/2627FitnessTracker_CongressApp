@@ -1,0 +1,11 @@
+const {JSDOM,VirtualConsole}=require('jsdom'),fs=require('fs'),assert=require('assert/strict');
+const dom=new JSDOM(fs.readFileSync('web/google-login.html','utf8'),{url:'https://site.test/login',runScripts:'outside-only',virtualConsole:new VirtualConsole()}),w=dom.window,d=w.document;
+const native=[];w.webkit={messageHandlers:{nativeAuth:{postMessage:message=>native.push(message)}}};let correct=false,calls=[];w.fetch=async(path,options)=>{calls.push({path,options});assert.equal(path,'/api/auth/judge');return {ok:correct,json:async()=>correct?{account:{provider:'judge'}}:{error:'Incorrect username or password.'}};};
+w.eval(fs.readFileSync('web/judge-login.js','utf8')+'\n'+fs.readFileSync('web/google-login-loader.js','utf8'));
+const tick=()=>new Promise(r=>setTimeout(r,0));
+(async()=>{
+ const form=d.querySelector('#judge-login-form'),google=d.querySelector('#google-signin');assert(form.compareDocumentPosition(google)&w.Node.DOCUMENT_POSITION_FOLLOWING,'Judge form is above Google');assert.equal(d.querySelector('[name=password]').type,'password');assert(!/for judges|guest1|1234|judge demo/i.test(d.querySelector('main').textContent));assert.equal(d.querySelector('[name=username]').placeholder,'Username');
+ form.elements.username.value='guest1';form.elements.password.value='wrong';form.dispatchEvent(new w.Event('submit',{cancelable:true}));await tick();assert.equal(d.querySelector('#judge-auth-status').textContent,'Incorrect username or password.');assert(!d.querySelector('#judge-signin').disabled);assert(!google.disabled);
+ correct=true;form.elements.password.value='1234';form.dispatchEvent(new w.Event('submit',{cancelable:true}));assert(google.disabled);await tick();assert.equal(calls.length,2);assert.deepEqual(JSON.parse(calls[1].options.body),{username:'guest1',password:'1234'});assert.equal(calls[1].options.credentials,'same-origin');assert.equal(form.elements.password.value,'');assert.equal(native.length,0,'Judge login never opens native Google authentication');
+ console.log('PASS judge form order, username/password submission, retry, duplicate prevention, no Google SDK dependency and password clearing');
+})().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>w.close());

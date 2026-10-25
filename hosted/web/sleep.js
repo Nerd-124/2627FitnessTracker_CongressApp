@@ -90,7 +90,7 @@ function renderSleep() {
       const previous=state.records; const clean={...r};
       for (const key of ['bed','wake','sleepHours','sleepQuality','sleepNotes']) delete clean[key];
       state.records=previous.map(row=>row===r?clean:row);
-      try { localStorage.setItem(KEY,JSON.stringify(state)); }
+      try { localStorage.setItem(KEY,JSON.stringify(state));if(typeof scheduleProgressSync==='function')scheduleProgressSync(); }
       catch { state.records=previous;toast('Not removed: browser storage is unavailable.');return; }
       renderRecords(); if (sleepSelected === r.date) { $('#sleep-form').dataset.dirty='false'; selectSleepNight(r.date); }
       $('#sleep-save-status').textContent = 'Sleep removed. Other journal information was kept.';
@@ -193,9 +193,9 @@ function initializeSleep() {
     if(hours===null){$('#sleep-save-status').textContent='Use different bedtime and wake-up times.';return;}
     if(!sleepStorageAvailable()){$('#sleep-save-status').textContent='Browser storage is unavailable. Export your data or enable storage before saving.';return;}
     const previous=sleepEntry(value.date)||{};
-    const record={...previous,...value,sleepHours:Math.round(hours*10)/10};
+    const record={...previous,...value,sleepHours:previous.inputSources?.sleepHours?.kind==='wearable-import'&&value.bed===previous.bed&&value.wake===previous.wake?previous.sleepHours:Math.round(hours*10)/10};if(typeof clearChangedImportSources==='function')clearChangedImportSources(record,previous,Object.keys(value).concat(['sleepHours']));
     const records=state.records; state.records=[...state.records.filter(r=>r.date!==value.date),record];
-    try { localStorage.setItem(KEY,JSON.stringify(state)); }
+    try { localStorage.setItem(KEY,JSON.stringify(state));if(typeof scheduleProgressSync==='function')scheduleProgressSync(); }
     catch { state.records=records; $('#sleep-save-status').textContent='Not saved: browser storage is full or unavailable. Export data and remove an old EEG recording, then try again.';return; }
     sleepSelected=value.date; form.dataset.dirty='false'; renderRecords(); renderSleep();
     $('#sleep-form-title').textContent='Edit your night';$('#sleep-save-status').textContent=`Saved ${value.date} · ${hours.toFixed(1)} h in bed. Your journal and sleep graph are updated.`;
@@ -203,7 +203,7 @@ function initializeSleep() {
   };
   $('#sleep-new').onclick=()=>selectSleepNight(localDate());
   $('#sleep-range').onchange=renderSleep;
-  $('#sleep-to-journal').onclick=()=>{openAppPage('journal');openJournalEditor(sleepSelected||localDate());};
+  $('#sleep-to-journal').onclick=()=>{openJournalEditor(sleepSelected||localDate());};
   $('#eeg-recording').onchange=()=>{$('#eeg-status').textContent='';renderEEG();};
   $('#eeg-channel').onchange=drawEEG;$('#eeg-window').onchange=drawEEG;$('#eeg-start').oninput=drawEEG;$('#eeg-sample').oninput=inspectEEG;
   $('#eeg-file').onchange=async e=>{
@@ -220,7 +220,7 @@ function initializeSleep() {
       if(clearingData || recordsStale || document.body.classList.contains('session-paused'))throw Error('Sign in again or reload before importing.');
       const record={id:crypto.randomUUID(),date,filename:file.name,...parsed};
       state.eegRecordings.push(record);
-      try { localStorage.setItem(KEY,JSON.stringify(state)); }
+      try { localStorage.setItem(KEY,JSON.stringify(state));if(typeof scheduleProgressSync==='function')scheduleProgressSync(); }
       catch { state.eegRecordings.pop();throw Error('Not imported: browser storage is full or unavailable. Export data and remove an old recording first.'); }
       renderEEGOptions(record.id);$('#eeg-status').textContent=`Imported ${parsed.rows.length} samples. Choose a signal or move the sample slider to explore.`;
     } catch(err) { $('#eeg-status').textContent=err.message; }
@@ -230,7 +230,7 @@ function initializeSleep() {
     const r=selectedEEG();if(!r||r===eegDemo||clearingData||recordsStale||document.body.classList.contains('session-paused'))return;
     if(!confirm(`Remove ${r.filename}? Export it first if you need a copy.`))return;
     const previous=state.eegRecordings;state.eegRecordings=previous.filter(item=>item.id!==r.id);
-    try{localStorage.setItem(KEY,JSON.stringify(state));}catch{state.eegRecordings=previous;$('#eeg-status').textContent='Could not remove recording: browser storage is unavailable.';return;}
+    try{localStorage.setItem(KEY,JSON.stringify(state));if(typeof scheduleProgressSync==='function')scheduleProgressSync();}catch{state.eegRecordings=previous;$('#eeg-status').textContent='Could not remove recording: browser storage is unavailable.';return;}
     renderEEGOptions();$('#eeg-status').textContent='Recording removed. Your sleep journal is unchanged.';
   };
   $('#export-eeg').onclick=()=>{

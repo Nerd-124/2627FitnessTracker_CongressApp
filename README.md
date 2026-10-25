@@ -1,5 +1,9 @@
 # Longevity Simulator
 
+## Latest published app
+
+The current website and iPhone source are saved in [hosted/](hosted/). See [the snapshot guide](hosted/SNAPSHOT.md) for the latest source version and project locations. The Python edition below is preserved.
+
 A JavaScript web interface with a Python backend for the Congressional App Challenge.
 The latest live design includes typed workout logging, compact map/timer views, and the guided profile setup, daily journal calendar and
 charts, sleep/EEG imports, live GPS controls, elevation charts and route playback.

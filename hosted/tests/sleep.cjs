@@ -8,7 +8,7 @@ w.fetch=async()=>({ok:true,json:async()=>({storageKey:'sleep-test'})});
 w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
 const key='longevity-account-v1:sleep-test';
 w.localStorage.setItem(key,JSON.stringify({profile:{name:'Test',age:30,height:170,weight:70},habits:{exercise:150,sleep:8,plants:5},records:[],onboardingComplete:false}));
-w.eval(['run-math.js','runner.js','journal.js','account.js','features.js','sleep.js','workouts.js','home.js','setup.js','planner.js','coach-rules.js','coach.js','app.js'].map(n=>fs.readFileSync(root+n,'utf8')).join('\n')+'\nwindow.testState=state;Object.assign(window,{selectSleepNight,nightDuration,parseEEG,renderSleep,renderEEGOptions,localDate});');
+w.eval(['run-math.js','runner.js','journal.js','account.js','features.js','sleep.js','workouts.js','home.js','setup.js','planner.js','coach-rules.js','coach.js','mental-health.js','future-self.js','app.js'].map(n=>fs.readFileSync(root+n,'utf8')).join('\n')+'\nwindow.testState=state;Object.assign(window,{selectSleepNight,nightDuration,parseEEG,renderSleep,renderEEGOptions,localDate});');
 const $=s=>w.document.querySelector(s);const tick=()=>new Promise(r=>setTimeout(r,0));
 const submit=()=>$('#sleep-form').dispatchEvent(new w.Event('submit',{cancelable:true,bubbles:true}));
 (async()=>{

@@ -1,0 +1,9 @@
+{
+  "app": "Longevity Simulator",
+  "edition": "iPhone live website shell",
+  "website_url": "https://longevity-simulator-lab.idealapple4.chatgpt.site/app",
+  "web_snapshot_sha256": "a4275010448ea9f831a3cc93b2d46750446848437d09d6453c8a7dd92fb19220",
+  "minimum_ios": "17.0",
+  "contains_secrets": false,
+  "validation": "JavaScript bridge and source/project structure checked; Xcode build and device testing still required."
+}

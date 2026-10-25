@@ -9,38 +9,23 @@ def number(data, key, low, high, default):
 
 
 def simulate(data):
-    age = number(data, 'age', 18, 100, 28)
+    age = number(data, 'age', 13, 100, 28)
     weight = number(data, 'weight', 30, 300, 70)
     height = number(data, 'height', 120, 230, 172)
-    exercise = number(data, 'exercise', 0, 600, 150)
-    sleep = number(data, 'sleep', 3, 12, 8)
-    plants = number(data, 'plants', 0, 10, 5)
     sex = data.get('sex', 'unspecified')
     if sex not in ('female', 'male', 'unspecified'):
         raise ValueError('Unsupported BMR equation selection.')
     # Mifflin–St Jeor coefficients. A range avoids inferring a coefficient.
     base = 10 * weight + 6.25 * height - 5 * age
     bmr = [round(base - 161), round(base + 5)] if sex == 'unspecified' else [round(base + (5 if sex == 'male' else -161))] * 2
-    # Explicitly a design heuristic, NOT a fitted clinical risk or lifespan model.
-    movement = min(exercise / 150, 1) * 100
-    rest = max(0, 100 - abs(sleep - 8) * 22)
-    nutrition = min(plants / 5, 1) * 100
-    score = round(.4 * movement + .35 * rest + .25 * nutrition)
-    years = list(range(0, 31, 5))
-    def trajectory(s):
-        return [round(65 + (s - 65) * (1 - math.exp(-y / 10)), 1) for y in years]
-    tips = []
-    if exercise < 150:
-        tips.append('Explore a gradual increase in activity toward the adult guideline of 150 minutes per week, as appropriate for your ability.')
-    if sleep < 7 or sleep > 9:
-        tips.append('Explore a consistent sleep schedule. Most adults aged 18–60 need at least 7 hours; individual needs vary.')
-    if plants < 5:
-        tips.append('Try adding a serving of fruit or vegetables to a meal. Variety matters more than a single score.')
-    if not tips:
-        tips.append('Your scenario meets these three simplified targets. Explore consistency and an activity you enjoy.')
-    return dict(bmi=round(weight / (height / 100) ** 2, 1), bmr=bmr, score=score,
-                years=years, ages=[age + y for y in years], baseline=trajectory(65), scenario=trajectory(score), tips=tips,
-                model='Illustrative habit-support index; not biological age, disease probability, or years of life gained.')
+    if age < 18:
+        bmr = None
+    # Retired the old three-input plants-weighted score and invented trajectory.
+    # The frontend's explicitly provisional five-area habit rubric handles habits.
+    return dict(bmi=round(weight / (height / 100) ** 2, 1) if age >= 18 else None,
+                bmr=bmr, score=None, years=[], ages=[], baseline=[], scenario=[], tips=[],
+                model='Adult BMI and resting-energy estimates only; no health or lifespan forecast.')
+
 
 
 def activity(data):
