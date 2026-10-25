@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS account_progress (owner_key TEXT NOT NULL, document_id TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1, document TEXT, deleted INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL, PRIMARY KEY (owner_key, document_id));
