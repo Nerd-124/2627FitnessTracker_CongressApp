@@ -15,3 +15,5 @@ This snapshot includes the WHO-5 check-in, Exercise / Mental health / Sleep repo
 This is a source backup. Runtime secrets and private user database records are not included. The Firebase client configuration is public app configuration, not a server credential. A native Xcode build and device verification still require a Mac/iPhone.
 
 Latest guest1 data: October 1–25 only, daily fictional WHO-5 scores, and only essential journal measurements. Repeated day notes removed; overall fictional-sample label retained. Optional input features remain available.
+
+Hosting-provider deployment metadata is intentionally omitted from this GitHub backup. The live project retains its required configuration separately; website and iPhone source files remain available here.
