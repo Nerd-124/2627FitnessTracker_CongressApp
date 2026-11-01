@@ -11,7 +11,6 @@ private final class NoAuthenticationRedirects: NSObject, URLSessionTaskDelegate 
     }
 }
 
-// Google OAuth uses Google's SDK/system authentication session, never WKWebView.
 @MainActor
 final class GoogleAuthentication: NSObject, WKScriptMessageHandler {
     private let cookieName = "__Host-longevity-google"
@@ -27,7 +26,6 @@ final class GoogleAuthentication: NSObject, WKScriptMessageHandler {
     weak var webView: WKWebView?
     weak var model: LiveAppModel?
     private var refreshing = false
-    // A foreground refresh must not swallow the post-sign-in navigation.
     private var reloadAfterRefresh = false
     private var refreshTimer: Timer?
     private var observer: NSObjectProtocol?
@@ -84,7 +82,7 @@ final class GoogleAuthentication: NSObject, WKScriptMessageHandler {
                 guard let self, signInGeneration == self.generation else { return }
                 self.signInPresented = false
                 if let error {
-                    if (error as NSError).code != -5 /* Google Sign-In: user cancelled */ { self.model?.notice = error.localizedDescription }
+                    if (error as NSError).code != -5 { self.model?.notice = error.localizedDescription }
                     return
                 }
                 guard let googleUser = result?.user, let idToken = googleUser.idToken?.tokenString else {
@@ -103,7 +101,6 @@ final class GoogleAuthentication: NSObject, WKScriptMessageHandler {
         }
     }
 
-    // A restored Firebase session refreshes the web cookie without prompting Google again.
     func refreshSession(reload: Bool) {
         if !reload && Date() < nextRefreshAttempt { return }
         guard let user = Auth.auth().currentUser else { return }
