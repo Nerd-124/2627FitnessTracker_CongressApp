@@ -1,5 +1,3 @@
-"""Journal validation and progress calculations, separate from the interface."""
-
 import calendar
 from datetime import date
 from .health import sleep_hours
@@ -60,7 +58,7 @@ def validate_entry(entry):
 
 
 def month_weeks(year, month):
-    """Rows of seven dates. None means the cell belongs to a neighboring month."""
+
     return calendar.Calendar(firstweekday=6).monthdayscalendar(year, month)
 
 

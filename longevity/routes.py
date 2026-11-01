@@ -1,5 +1,3 @@
-"""GPS math in Python: distance, elevation, splits, playback, and GPX files."""
-
 import math
 from datetime import datetime, timezone
 from statistics import median
@@ -9,7 +7,7 @@ MILE_METERS = 1609.344
 
 
 def distance_meters(first, second):
-    """Haversine distance between two latitude/longitude points."""
+
     lat1, lat2 = math.radians(first["lat"]), math.radians(second["lat"])
     dlat = lat2 - lat1
     dlon = math.radians(second["lon"] - first["lon"])
@@ -35,11 +33,11 @@ def valid_point(point):
 
 
 def analyze_route(raw_points, active_seconds=0):
-    """Keep pauses as gaps. Missing altitude is never changed into zero.
 
-    A three-point median smooths heights. Changes smaller than 3 meters
-    accumulate before affecting ascent; implausible grades are omitted.
-    """
+
+
+
+
     if (
         not isinstance(raw_points, list)
         or len(raw_points) > 10_000
@@ -167,7 +165,7 @@ def split_times(analysis, unit_meters=MILE_METERS):
 
 
 def playback_point(analysis, fraction):
-    """Interpolate between fixes, but hold position during a GPS gap."""
+
     points = analysis["points"]
     if not points:
         return None

@@ -1,8 +1,3 @@
-"""Run the JavaScript interface with a Python server: python3 app.py.
-
-Accounts reuse the Streamlit SQLite database. Health entries in this edition
-stay in account-scoped browser storage; the Streamlit edition remains separate.
-"""
 import html
 import json
 import os

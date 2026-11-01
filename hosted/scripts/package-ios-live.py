@@ -1,4 +1,3 @@
-"""Package the editable Xcode live-site shell, without credentials or user data."""
 from pathlib import Path
 import json,subprocess,zipfile,shutil,hashlib
 root=Path(__file__).resolve().parent.parent

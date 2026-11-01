@@ -1,5 +1,3 @@
-"""Account controls and portable JSON backups."""
-
 import json
 import streamlit as st
 from longevity.backups import prepare_import

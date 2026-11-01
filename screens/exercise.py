@@ -1,8 +1,3 @@
-"""Python owns recording state, metrics, saved runs, replay, and maps.
-
-Only read_gps() talks to the tiny JavaScript sensor adapter.
-"""
-
 from datetime import date
 import time
 import uuid
@@ -24,7 +19,7 @@ from .shared import show_elevation, show_route_map
 
 
 def gps_command(command):
-    """A fresh token tells the browser to start/stop exactly once."""
+
     st.session_state.gps_command = {"command": command, "token": str(uuid.uuid4())}
 
 

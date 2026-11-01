@@ -1,5 +1,3 @@
-"""Sliders, comparisons, and a graph defined in Python."""
-
 import pandas as pd
 import streamlit as st
 from longevity.health import simulate

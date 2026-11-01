@@ -1,5 +1,3 @@
-"""Profile setup is a normal Python form."""
-
 import streamlit as st
 from longevity.health import simulate
 

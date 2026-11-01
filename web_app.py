@@ -1,4 +1,3 @@
-"""Longevity Simulator: dependency-free, local educational Python web app."""
 import json
 import math
 import os

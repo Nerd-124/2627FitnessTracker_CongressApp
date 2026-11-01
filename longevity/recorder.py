@@ -1,5 +1,3 @@
-"""A GPS recording state machine written in Python, not JavaScript."""
-
 from datetime import datetime, timezone
 import time
 import uuid

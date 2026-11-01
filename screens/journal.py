@@ -1,5 +1,3 @@
-"""The complete calendar, graph, and journal form are Python code."""
-
 from datetime import date, timedelta
 import altair as alt
 import pandas as pd

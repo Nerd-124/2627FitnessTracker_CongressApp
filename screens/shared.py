@@ -1,5 +1,3 @@
-"""Small display helpers reused by the Python screens."""
-
 from datetime import date
 import pandas as pd
 import pydeck as pdk

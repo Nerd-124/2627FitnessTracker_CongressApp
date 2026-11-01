@@ -1,5 +1,3 @@
-"""Exercise the actual Python screens without installing a browser."""
-
 import os
 from pathlib import Path
 import tempfile

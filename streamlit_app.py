@@ -1,9 +1,3 @@
-"""START HERE: the Python entry point for Longevity Simulator.
-
-Run: python -m streamlit run app.py
-This file chooses the screen; each screen and calculation is also Python.
-"""
-
 import os
 from pathlib import Path
 import streamlit as st

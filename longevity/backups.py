@@ -1,5 +1,3 @@
-"""Read Python backups or the previous web app's JSON export."""
-
 import json
 from datetime import date
 from .eeg import parse_eeg

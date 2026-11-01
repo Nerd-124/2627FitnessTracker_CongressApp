@@ -1,5 +1,3 @@
-"""Daily habits and a seven-day progress display, all written in Python."""
-
 from datetime import date, timedelta
 import streamlit as st
 

@@ -1,5 +1,3 @@
-"""Optional EEG file import. No sleep stages or diagnoses are inferred."""
-
 import csv
 import io
 from .routes import optional_number

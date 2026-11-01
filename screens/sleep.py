@@ -1,5 +1,3 @@
-"""Sleep first; EEG is an optional advanced section."""
-
 from datetime import date
 import uuid
 import pandas as pd

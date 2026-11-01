@@ -1,9 +1,3 @@
-"""SQLite accounts and records. Every document query is scoped to its owner.
-
-Nothing is stored in a browser's localStorage. The database lives in .data/,
-which is excluded from Git. Use a persistent disk when deploying elsewhere.
-"""
-
 from contextlib import contextmanager
 import hashlib
 import hmac
@@ -179,7 +173,7 @@ class Database:
             connection.execute("DELETE FROM documents WHERE user_id=?", (user_id,))
 
     def import_documents(self, user_id, documents):
-        """One transaction: malformed backups cannot leave a half-finished import."""
+
         prepared = []
         for kind, key, value in documents:
             self._check_owner(user_id, kind)

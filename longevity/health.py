@@ -1,14 +1,9 @@
-"""Readable health calculations, with units included in function names.
-
-These are educational estimates, not predictions of lifespan or disease.
-"""
-
 import math
 from datetime import datetime, timedelta
 
 
 def number(data, key, low, high, default):
-    """Read one finite number and reject values outside a supported range."""
+
     value = float(data.get(key, default))
     if not math.isfinite(value) or not low <= value <= high:
         raise ValueError(f"{key} must be between {low} and {high}.")
@@ -21,7 +16,7 @@ def calculate_bmi(weight_kg, height_cm):
 
 
 def calculate_bmr(age, weight_kg, height_cm, coefficient="unspecified"):
-    """Mifflin–St Jeor resting energy in kcal/day, not a food intake target."""
+
     base = 10 * weight_kg + 6.25 * height_cm - 5 * age
     if coefficient == "female":
         return [round(base - 161), round(base - 161)]
@@ -33,7 +28,7 @@ def calculate_bmr(age, weight_kg, height_cm, coefficient="unspecified"):
 
 
 def sleep_hours(bedtime, wake_up):
-    """Overnight duration, assigned to the wake-up date. Equal times are invalid."""
+
     bed = datetime.strptime(str(bedtime), "%H:%M")
     wake = datetime.strptime(str(wake_up), "%H:%M")
     if wake < bed:
@@ -45,7 +40,7 @@ def sleep_hours(bedtime, wake_up):
 
 
 def simulate(data):
-    """Calculate baseline estimates and an explicitly illustrative habit score."""
+
     age = number(data, "age", 18, 100, 28)
     weight = number(data, "weight", 30, 300, 70)
     height = number(data, "height", 120, 230, 172)
@@ -69,11 +64,11 @@ def simulate(data):
 
 
 def estimate_calories(distance_m, ascent_m, active_seconds, weight_kg, mode):
-    """ACSM-style total kcal, including resting cost during active time.
 
-    Uphill adds energy. Downhill is treated as level ground. Weather does not
-    receive an invented calorie multiplier.
-    """
+
+
+
+
     if mode not in ("walk", "run"):
         raise ValueError("Choose walk or run.")
     values = [distance_m, ascent_m, active_seconds, weight_kg]
