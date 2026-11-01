@@ -1,5 +1,4 @@
 'use strict';
-// Sleep records share the daily journal. EEG recordings are optional device imports.
 let sleepSelected = null;
 let eegDemo = null;
 const sleepQualityLabels = ['', 'Very tired', 'A little tired', 'Okay', 'Rested', 'Very rested'];
@@ -46,7 +45,6 @@ function sleepBounds() {
   const start = new Date(end); start.setDate(start.getDate() - days + 1);
   return { days, start: localDate(start), end: localDate(end) };
 }
-// Overrides the original basic history renderer; existing journal hooks call this too.
 function renderSleep() {
   if (!$('#sleep-summary')) return;
   const { days, start, end } = sleepBounds();
@@ -216,7 +214,6 @@ function initializeSleep() {
       if(state.eegRecordings.length>=10)throw Error('Remove an old recording first; this browser keeps up to 10.');
       $('#eeg-status').textContent='Reading and checking your CSV…';
       const parsed=parseEEG(await file.text());
-      // Account transitions may lock storage while the asynchronous file is read.
       if(clearingData || recordsStale || document.body.classList.contains('session-paused'))throw Error('Sign in again or reload before importing.');
       const record={id:crypto.randomUUID(),date,filename:file.name,...parsed};
       state.eegRecordings.push(record);
