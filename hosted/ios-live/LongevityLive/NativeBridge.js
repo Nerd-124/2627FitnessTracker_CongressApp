@@ -1,4 +1,3 @@
-// Injected only into the main document at the configured HTTPS website origin.
 (() => {
   if (window.location.origin !== '__WEBSITE_ORIGIN__' || window.top !== window) return;
   const channel = window.webkit?.messageHandlers?.nativeLocation;
@@ -64,8 +63,6 @@
       return true;
     },
     pause() {
-      // Compatible with older installed shells: preserve elapsed time even if
-      // that shell must stop GPS while it is in the background.
       if (document.hidden && typeof suspendRunForBackground === 'function') suspendRunForBackground();
       else if (typeof resumeRunFromBackground === 'function') resumeRunFromBackground();
 
