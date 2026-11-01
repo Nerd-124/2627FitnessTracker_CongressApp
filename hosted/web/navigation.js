@@ -1,5 +1,4 @@
 'use strict';
-// Reuse the same navigation and account controls on desktop and phone.
 (()=>{
  const sidebar=document.querySelector('#app-sidebar'),dialog=document.querySelector('#mobile-side-menu');
  const open=document.querySelector('#open-side-menu'),close=document.querySelector('#close-side-menu');
