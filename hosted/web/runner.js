@@ -111,8 +111,7 @@ function failRunGPS(message){if(!activeRun)return;pauseRun(message);activeRun.gp
 function runGPSError(error){
  if(!runIsActive())return;
  if(Number(error.code)===1){failRunGPS(gpsErrorText(error));return;}
- // POSITION_UNAVAILABLE and TIMEOUT can be temporary. Keep the watch alive
- // until the acquisition deadline, or retain an active route during signal loss.
+
  $('#run-feedback').textContent=activeRun.phase==='acquiring'
   ? 'Still looking for precise GPS. The wait clock continues, with a 45-second limit. Check location settings and move outdoors.'
   : 'GPS signal is temporarily unavailable. Active time continues; distance waits for a usable fix. Long gaps are not connected.';
@@ -126,8 +125,7 @@ function beginRunWatch(){
   const id=navigator.geolocation.watchPosition(success,failure,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
   if(token!==gpsWatchToken||!runIsActive()){navigator.geolocation.clearWatch(id);return;}
   watchId=id;runTick=setInterval(()=>{if(token===gpsWatchToken)tickRunWatch();},1000);
-  // Some browsers refresh getCurrentPosition more promptly than watchPosition.
-  // Both are guarded by the same token and timestamp validation.
+
   navigator.geolocation.getCurrentPosition?.(success,failure,{enableHighAccuracy:true,maximumAge:0,timeout:12000});
  }catch(error){if(token===gpsWatchToken)failRunGPS(gpsErrorText(error));}
 }
@@ -194,7 +192,6 @@ async function autoLocateExercise(){
  try{if(navigator.permissions?.query){const permission=await navigator.permissions.query({name:'geolocation'});if(permission.state==='granted'&&$('#activity').classList.contains('active'))locateRunPreview();}}catch{}
 }
 
-// Button choices keep common settings visible without opening menus.
 function syncExerciseChoices(){
  document.querySelectorAll('#activity [data-exercise-choice]').forEach(button=>{
   const select=document.getElementById(button.dataset.exerciseChoice);
@@ -259,7 +256,6 @@ function drawElevationProfile(analysis){
   add('line',{x1:left,x2:width-right,y1:py,y2:py,stroke:'#e3e9dd'});
   add('text',{x:left-9,y:py+5,'text-anchor':'end',fill:'#60745d','font-size':14},height.toFixed(Math.abs(high-low)<5?1:0));
  }
- // Separate missing-altitude and paused segments before drawing any paths.
  let group=[];const groups=[];
  for(const p of analysis.points){
   if(p.breakBefore||!Number.isFinite(p.height)){if(group.length)groups.push(group);group=[];}
@@ -274,7 +270,6 @@ function drawElevationProfile(analysis){
   add('polyline',{points:line,fill:'none',stroke:'#47784e','stroke-width':2.5,'stroke-linecap':'round','stroke-linejoin':'round','data-elevation-segment':'true'});
  }
  for(let i=0;i<3;i++)add('text',{x:left+(width-left-right)*i/2,y:204,'text-anchor':'middle',fill:'#60745d','font-size':14},(analysis.distance/runUnitMeters()*i/2).toFixed(2));
- // The graph and marker use the exact same route sample, including on return legs.
  let hoverIndex=0;
  const inspect=index=>{
   clearElevationHover();hoverIndex=Math.max(0,Math.min(analysis.points.length-1,index));
@@ -371,8 +366,7 @@ async function fetchRunWeather(session,force=false){
   if(index<0||best>3600000||typeof temperature!=='number'||!Number.isFinite(temperature)||temperature < -60||temperature >65)throw Error('No temperature for this time');
   if(!globalThis.document?.body||KEY!==accountKey||!exerciseCanSave())return;
   const live=activeRun?.id===id?activeRun:state.activities.find(s=>s.id===id)||(id==='import-preview'&&reviewSession?.id===id?reviewSession:null);
-  if(!live)return; // An abandoned or deleted run must not receive late results.
-  // Preserve both explicit manual entries and unsaved manual corrections.
+  if(!live)return;
   let unsavedManual=false;
   if(reviewSession?.id===id)unsavedManual=$('#run-temperature').dataset.dirty==='true';
   if(force||(!unsavedManual&&live.temperatureSource!=='manual')){live.temperature=temperature;live.temperatureSource='open-meteo';}
@@ -393,7 +387,6 @@ async function fetchRunWeather(session,force=false){
  }finally{clearTimeout(timeout);runWeatherPending.delete(id);}
 }
 
-// Planned paths never enter state.route, activities, or completion evidence.
 let routePlanning=false,routeDrawing=true,plannedPoints=[],plannedPace=6,plannedLayer=null;
 let plannedRouteVerified=false,plannedRouteAbort=null,plannedRouteVersion=0,lastPlannedRouteRequest=0,plannedGait='run';
 const plannedElevationCache=new Map();
@@ -527,7 +520,6 @@ async function plannedLookupJSON(url,signal){
 }
 async function loadPlannedElevation(){
  clearTimeout(plannedElevationTimer);if(plannedPoints.length<2||!plannedRouteVerified||plannedElevationAbort)return;
- // Retain successful samples across retries and reloads.
  for(const p of plannedPoints)if(Number.isFinite(p.ele))plannedElevationCache.set(plannedElevationKey(p),p.ele);
  const controller=new AbortController();plannedElevationAbort=controller;
  const version=++plannedElevationVersion,key=KEY,raw=plannedPoints.map(p=>({...p}));
@@ -624,7 +616,6 @@ function validatePedestrianRoute(data,requested){
   if(nearest>500)throw Error('No pedestrian path within 500 m of part of the sketch. Draw closer to a road or trail.');
  }
  const length=analyzePlannedTerrain(points).distance;if(length<=0||length>100000)throw Error('Plan a route between a few meters and 100 km.');
- // Insert positions at no more than 50 m spacing, independent of cursor speed.
  const sampled=[points[0]];
  for(let i=1;i<points.length;i++){
   const a=points[i-1],b=points[i],steps=Math.max(1,Math.ceil(RunMath.meters(a,b)/50));
@@ -644,7 +635,6 @@ async function validatePlannedPath(){
   let section=[requested[0]],length=0;
   for(let i=1;i<requested.length;i++){
    const distance=RunMath.meters(requested[i-1],requested[i]);
-   // Add anchors along long straight segments to bound pedestrian requests.
    const steps=Math.max(1,Math.ceil(distance/5000));
    for(let j=1;j<=steps;j++){
     const a=requested[i-1],b=requested[i],p={lat:a.lat+(b.lat-a.lat)*j/steps,lon:a.lon+(b.lon-a.lon)*j/steps};
