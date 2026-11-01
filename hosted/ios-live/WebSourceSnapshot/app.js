@@ -3,8 +3,8 @@ const $ = s => document.querySelector(s);
 const KEY = window.LONGEVITY_ACCOUNT ? 'longevity-account-v1:'+window.LONGEVITY_ACCOUNT.storageKey : 'longevity-simulator-v1';
 let clearingData=false;
 let state = {profile:{age:null,height:null,weight:null,sex:'unspecified'},habits:{exercise:null,sleep:null},records:[],route:[],onboardingComplete:false,baselineHabits:null,baselineRecord:null,dailyGoals:{},activities:[],workouts:[],plans:[],plannerActiveId:null,eegRecordings:[],runDraft:null,runUnit:"mi"};
-try {const saved=JSON.parse(localStorage.getItem(KEY));if(saved && typeof saved==='object'){state.routinePromptSeen=saved.routinePromptSeen===true;state.nutrition=saved.nutrition||{};state.futureSelf=saved.futureSelf||null;state.runDraft=saved.runDraft||null;state.runUnit=saved.runUnit==="km"?"km":"mi";state.activities=Array.isArray(saved.activities)?saved.activities:[];state.workouts=Array.isArray(saved.workouts)?saved.workouts:[];state.plans=Array.isArray(saved.plans)?saved.plans:[];state.plannerActiveId=saved.plannerActiveId||null;state.eegRecordings=Array.isArray(saved.eegRecordings)?saved.eegRecordings:[];state.dailyGoals=saved.dailyGoals&&typeof saved.dailyGoals==='object'&&!Array.isArray(saved.dailyGoals)?saved.dailyGoals:{};state.onboardingComplete=saved.onboardingComplete===true;state.baselineHabits=saved.baselineHabits||null;state.baselineRecord=saved.baselineRecord||null;if(saved.profile)Object.assign(state.profile,saved.profile);if(saved.habits)Object.assign(state.habits,saved.habits);if(Array.isArray(saved.records))state.records=saved.records;if(Array.isArray(saved.route))state.route=saved.route;}}catch { /* Keep defaults when storage is unavailable or malformed. */ }
-// Fictional demonstration records, exclusively for the shared guest login.
+try {const saved=JSON.parse(localStorage.getItem(KEY));if(saved && typeof saved==='object'){state.routinePromptSeen=saved.routinePromptSeen===true;state.nutrition=saved.nutrition||{};state.futureSelf=saved.futureSelf||null;state.runDraft=saved.runDraft||null;state.runUnit=saved.runUnit==="km"?"km":"mi";state.activities=Array.isArray(saved.activities)?saved.activities:[];state.workouts=Array.isArray(saved.workouts)?saved.workouts:[];state.plans=Array.isArray(saved.plans)?saved.plans:[];state.plannerActiveId=saved.plannerActiveId||null;state.eegRecordings=Array.isArray(saved.eegRecordings)?saved.eegRecordings:[];state.dailyGoals=saved.dailyGoals&&typeof saved.dailyGoals==='object'&&!Array.isArray(saved.dailyGoals)?saved.dailyGoals:{};state.onboardingComplete=saved.onboardingComplete===true;state.baselineHabits=saved.baselineHabits||null;state.baselineRecord=saved.baselineRecord||null;if(saved.profile)Object.assign(state.profile,saved.profile);if(saved.habits)Object.assign(state.habits,saved.habits);if(Array.isArray(saved.records))state.records=saved.records;if(Array.isArray(saved.route))state.route=saved.route;}}catch {}
+
 function seedGuestSample(){
  if(window.LONGEVITY_ACCOUNT?.provider!=='judge'||window.LONGEVITY_ACCOUNT.storageKey!=='judge-demo-v1')return;
  const marker=KEY+':sample40-october-v4';try{if(localStorage.getItem(marker))return;}catch{return;}
@@ -15,7 +15,7 @@ function seedGuestSample(){
  const minutes=[15,20,0,25,20,0,30,20,25,0,10,30,25,35,30,0,35,20,0,30,35,25,40,0,35,30,25,0,40,30,35];
  const sleep=[6.5,7,6,7.5,7,6.5,7.5,7,7.5,6,6.5,7.5,8,7.5,8,7,7.5,6.5,6,7.5,8,7.5,8,7,7.5,8,7,6.5,8,7.5,8];
  const setbacks={3:'Busy day; skipped the planned walk.',6:'Late work night and a rest day.',10:'Poor sleep after a late evening; took a rest day.',11:'Low energy; chose a shorter walk.',16:'Planned rest day.',18:'Busy schedule; shortened the walk.',19:'Travel day; exercise plan changed.',24:'Rest day after a longer walk.',28:'Late night; took a recovery day.'};
- // Populate the demo only through the current date.
+
  const last=localDate(today)>='2026-11-01'?31:localDate(today)>='2026-10-01'?today.getDate():0;
  for(let d=1;d<=last;d++){
   const i=d-1,date='2026-10-'+String(d).padStart(2,'0'),existing=sample.records.find(r=>r.date===date);
@@ -29,17 +29,15 @@ function seedGuestSample(){
  }
  sample.records.sort((a,b)=>a.date.localeCompare(b.date));
  sample.onboardingComplete=true;sample.routinePromptSeen=true;
- try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{/* Leave existing progress untouched if storage is unavailable. */}
+ try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{}
 }
 seedGuestSample();
-// One-time, fictional WHO-5 examples for guest1 only; retain every existing answer.
 function seedGuestMentalSample(){
  if(window.LONGEVITY_ACCOUNT?.provider!=='judge'||window.LONGEVITY_ACCOUNT.storageKey!=='judge-demo-v1')return;
  const marker=KEY+':sample-who5-october-v1';try{if(localStorage.getItem(marker))return;}catch{return;}
  const sample=JSON.parse(JSON.stringify(state)),today=localDate();
  const examples=[['2026-10-01',[3,3,3,2,3]],['2026-10-15',[4,4,3,4,4]],['2026-10-29',[4,4,4,4,5]]];
  for(const [date,answers] of examples){
-  // All dates are fictional examples for October; WHO-5 assessment ignores future dates.
   let row=sample.records.find(r=>r.date===date);
   if(row?.who5||row&&!row.sampleData)continue;
   if(!row){row={date,sampleData:true};sample.records.push(row);}
@@ -47,10 +45,9 @@ function seedGuestMentalSample(){
   row.notes=(row.notes?row.notes+' ':'')+'FICTIONAL WHO-5 DEMO — invented responses, not a real assessment.';
  }
  sample.records.sort((a,b)=>a.date.localeCompare(b.date));
- try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{/* Preserve existing state if storage is unavailable. */}
+ try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{}
 }
 seedGuestMentalSample();
-// Remove only optional recorded values from the guest October demo, not their input features.
 function simplifyGuestOctober(){
  if(window.LONGEVITY_ACCOUNT?.provider!=='judge'||window.LONGEVITY_ACCOUNT.storageKey!=='judge-demo-v1')return;
  const marker=KEY+':october-essential-records-v2';try{if(localStorage.getItem(marker))return;}catch{return;}
@@ -61,7 +58,7 @@ function simplifyGuestOctober(){
  sample.records=sample.records.filter(row=>!(row.sampleData&&row.date?.startsWith('2026-10-')&&row.date>today));
  for(const row of sample.records){
   if(!row.sampleData||!row.date?.startsWith('2026-10-'))continue;
-  // Keep the overall fictional-sample notice rather than repeating notes in each day.
+
   if(row.notes?.includes('FICTIONAL'))delete row.notes;
   if(!row.who5||row.who5.sampleData){
    const day=Number(row.date.slice(-2)),setback=[3,6,10,11,18,19,24].includes(day),base=day<8?3:4;
@@ -69,7 +66,7 @@ function simplifyGuestOctober(){
    row.who5={instrument:'WHO-5',version:'2024',recall:'past-two-weeks',answers,sampleData:true};
   }
  }
- try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{/* Keep the previous state on storage failure. */}
+ try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{}
 }
 simplifyGuestOctober();
 if(window.LONGEVITY_ACCOUNT?.provider==='judge'&&state.profile.personalGoals?.startsWith('Fictional sample:')){const note=document.createElement('p');note.className='note';note.textContent='Fictional October sample · age 40 · gradual progress with setbacks · not real measurements';document.querySelector('#home h1')?.after(note);}
