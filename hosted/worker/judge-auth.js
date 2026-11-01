@@ -1,5 +1,5 @@
-// Deliberately shared judging credentials. This grants only a separate, local demo.
-// The signing key belongs in Sites runtime secrets, never source or browser assets.
+
+
 const JUDGE_COOKIE='__Host-longevity-judge';
 const JUDGE_LIFETIME=7*24*60*60;
 function judgeCookie(token='',expiresAt=0){return JUDGE_COOKIE+'='+token+'; Path=/; Max-Age='+Math.max(0,Math.min(JUDGE_LIFETIME,Math.floor((expiresAt-Date.now())/1000)))+'; Secure; HttpOnly; SameSite=Lax';}

@@ -25,10 +25,10 @@ def simulate(data):
     sex = data.get('sex', 'unspecified')
     if sex not in ('female', 'male', 'unspecified'):
         raise ValueError('Unsupported BMR equation selection.')
-    # Mifflin–St Jeor coefficients. A range avoids inferring a coefficient.
+
     base = 10 * weight + 6.25 * height - 5 * age
     bmr = [round(base - 161), round(base + 5)] if sex == 'unspecified' else [round(base + (5 if sex == 'male' else -161))] * 2
-    # Explicitly a design heuristic, NOT a fitted clinical risk or lifespan model.
+
     movement = min(exercise / 150, 1) * 100
     rest = max(0, 100 - abs(sleep - 8) * 22)
     nutrition = min(plants / 5, 1) * 100
@@ -89,7 +89,7 @@ def activity(data):
             raise ValueError('Elevation gain exceeds this model’s supported average ascent grade of 30%.')
         segments = [(distance * 1000, gain)]
     speed = distance * 1000 / minutes
-    # Segment durations are allocated by distance: a constant-speed approximation.
+
     flat = 0
     uphill = 0
     max_grade = 0
@@ -102,7 +102,7 @@ def activity(data):
     estimate = flat + uphill
     speed_kmh = distance / minutes * 60
     outside = not (3 <= speed_kmh <= 6) if mode == 'walk' else speed_kmh < 8
-    # NOAA/Rothfusz heat-index regression where applicable, in Fahrenheit.
+
     f = temp * 9 / 5 + 32
     simple = .5 * (f + 61 + (f - 68) * 1.2 + humidity * .094)
     heat_index_c = None

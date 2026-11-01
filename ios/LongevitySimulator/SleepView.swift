@@ -14,7 +14,7 @@ struct SleepView: View {
                     let hours = wake.timeIntervalSince(bedtime) / 3600
                     Text("\(hours, specifier: "%.1f") hours")
                     Button("Save night") {
-                        // One entry per wake-up day. Editing that day's entry replaces it.
+
                         store.data.nights.removeAll { Calendar.current.isDate($0.wake, inSameDayAs: wake) }
                         store.data.nights.append(SleepNight(bedtime: bedtime, wake: wake)); store.save()
                     }.disabled(hours <= 0 || hours > 24)

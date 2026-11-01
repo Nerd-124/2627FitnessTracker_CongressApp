@@ -3,7 +3,7 @@ const dom=new JSDOM(fs.readFileSync('web/index.html','utf8'),{url:'https://site.
 const run={id:'saved-run',date:'2026-10-24',mode:'run',minutes:4,weight:70,route:[{lat:32,lon:-93,ele:10,elapsed:0},{lat:32.001,lon:-93,ele:15,elapsed:120},{lat:32.002,lon:-93,ele:20,elapsed:240}],result:{distance:.22,gain:10,calories:35}};
 w.localStorage.setItem('longevity-simulator-v1',JSON.stringify({profile:{age:30,height:170,weight:70},activities:[run],records:[],onboardingComplete:false,routinePromptSeen:true}));
 const modules=['run-math.js','runner.js','journal.js','account.js','features.js','sleep.js','workouts.js','home.js','setup.js','planner.js','coach-rules.js','coach.js','mental-health.js','future-self.js','journal-runs.js','app.js'];w.eval(modules.map(n=>fs.readFileSync('web/'+n,'utf8')).join('\n')+`;ensureRunnerMap=async()=>{};loadLeafletLibrary=async()=>{throw Error('offline')};window.state=state;window.installJournalLeaflet=fn=>loadLeafletLibrary=fn;window.openViewer=openJournalRunViewer;window.seek=seekJournalRun;window.tickReplay=()=>timers.get(journalReplayTimer)?.();window.recordingID=()=>activeRun?.id;window.elapsed=currentRunSeconds;`);w.timers=timers;
-// The eval helper uses a window-exposed timer map to advance replay deterministically.
+
 
 (async()=>{
  d.querySelector('#run-start').click();watchers.at(-1)({timestamp:now,coords:{latitude:33,longitude:-92,accuracy:5,altitude:10,altitudeAccuracy:4}});const activeID=w.recordingID(),draftCount=w.state.runDraft.points.length,routeBefore=JSON.stringify(w.state.route);

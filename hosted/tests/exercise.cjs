@@ -30,9 +30,9 @@ const instances=[];const use=seed=>{const c=create(seed);instances.push(c);retur
  $('#run-scrub').value=1000;$('#run-scrub').dispatchEvent(new w.Event('input'));assert($('#run-replay-readout').textContent.includes('00:40'),'Playback includes stationary tail of session');
  const limit=use();limit.$('#run-accuracy-limit').value='15';limit.$('#run-start').click();limit.point(0,20);assert.equal(limit.w.testState.runDraft.points.length,0);limit.point(0,10);assert.equal(limit.w.testState.runDraft.points.length,1);
  const clock=use();clock.$('#run-start').click();clock.point(0);clock.advance(10);clock.jumpWall(3600);clock.point(.0002);clock.advance(10);clock.jumpWall(-7200);clock.point(.0004);assert.equal(clock.w.testState.runDraft.points.length,3,'Wall-clock corrections do not drop valid movement');assert.equal(clock.w.testState.runDraft.points.filter(p=>p.breakBefore).length,0,'Clock correction is not a GPS gap');assert.equal(clock.$('#run-time').textContent,'00:20');
- // Explicit cancel invalidates callbacks even if an old browser request eventually succeeds.
+
  const cancel=use();cancel.$('#run-start').click();cancel.w.discardRun();cancel.$('#run-start').click();cancel.point(.02,5,0);assert.equal(cancel.w.testState.runDraft.points.length,0);cancel.point(0);assert.equal(cancel.w.testState.runDraft.points.length,1);
- // Location arrives before the map loader resolves: all callers await the same task.
+
  const map=use(),mw=map.w;let resolveMap,loads=0,views=[];
  const fake={invalidateSize(){},removeLayer(){},setView(point,zoom){views.push({point,zoom});return this;},panTo(){}};
  mw.fakeMap=fake;mw.loadMapForTest=()=>{loads++;return new Promise(resolve=>{resolveMap=()=>{mw.setMap(fake);resolve(fake);};});};
@@ -41,20 +41,20 @@ const instances=[];const use=seed=>{const c=create(seed);instances.push(c);retur
  const finding=mw.locateRunPreview();map.singles[0].success({coords:{latitude:40,longitude:-80,accuracy:12},timestamp:Date.now()});
  await Promise.resolve();assert.equal(loads,1);assert.equal(views.length,0);resolveMap();await finding;
  assert(views.some(v=>v.point[0]===40&&v.point[1]===-80&&v.zoom===16),'Delayed map centers on actual fix');assert.equal(map.$('#run-map-placeholder').hidden,true);assert.equal(map.w.testState.route.length,0);
- // Workouts: known independent MET result; CRUD, no journal mutation, custom names safe.
+
  assert.equal(w.workoutEstimate('basketball','moderate',30,70),221);assert.equal(w.workoutEstimate('other','moderate',30,70),null);
  assert.throws(()=>w.validateWorkout({sport:'swimming',date:w.localDate(),minutes:-1,intensity:'moderate',distance:''}));
  $('#exercise-show-workouts').click();assert.equal($('#exercise-workouts-panel').hidden,false);
  const form=$('#workout-form');assert.equal(form.elements.sport.tagName,'INPUT');assert.equal(form.elements.sport.type,'text');assert.equal($('#exercise-history-details').hidden,true);assert.equal($('#run-extra-details'),null);assert.equal($('#activity details'),null);assert.equal($('#activity-form'),null);form.elements.sport.value='Swimming';form.elements.date.value=w.localDate();form.elements.minutes.value='30';form.elements.intensity.value='moderate';form.elements.distance.value='1';form.elements.notes.value='<img onerror=alert(1)> 40 laps';
  form.dispatchEvent(new w.Event('submit',{cancelable:true,bubbles:true}));assert.equal(w.testState.workouts.length,1);assert.equal(w.testState.records.length,0,'Workout does not overwrite or duplicate journal');assert.equal(w.testState.workouts[0].calories,294);assert.equal($('#workout-history img'),null);
- // Exact weekly total is 30 + 40/60; UI rounds to 30.7.
+
  assert($('#exercise-summary').textContent.includes('30.7'));
  $('#workout-history button').click();form.elements.minutes.value='45';form.dispatchEvent(new w.Event('submit',{cancelable:true,bubbles:true}));assert.equal(w.testState.workouts.length,1);assert.equal(w.testState.workouts[0].minutes,45);
  form.elements.sport.value='<b>Volleyball</b>';form.elements.customName.value='';form.elements.minutes.value='20';form.dispatchEvent(new w.Event('submit',{cancelable:true,bubbles:true}));assert.equal(w.testState.workouts.length,2);assert.equal(w.testState.workouts[1].calories,null);assert.equal($('#workout-history b'),null);
  const snapshot=JSON.stringify(w.testState.workouts),set=w.Storage.prototype.setItem;w.Storage.prototype.setItem=function(){throw Error('full');};form.elements.minutes.value='25';form.elements.sport.value='Hockey';form.elements.customName.value='';form.dispatchEvent(new w.Event('submit',{cancelable:true,bubbles:true}));assert.equal(JSON.stringify(w.testState.workouts),snapshot);assert($('#workout-status').textContent.includes('Not saved'));w.Storage.prototype.setItem=set;
  const before=w.testState.workouts.length;w.confirm=()=>false;[...$('#workout-history').querySelectorAll('button')].find(b=>b.textContent==='Remove').click();assert.equal(w.testState.workouts.length,before);w.confirm=()=>true;[...$('#workout-history').querySelectorAll('button')].find(b=>b.textContent==='Remove').click();assert.equal(w.testState.workouts.length,before-1);
  const persisted=JSON.parse(w.localStorage.getItem('longevity-simulator-v1'));assert.equal(persisted.workouts.length,1);const reload=use(persisted);assert.equal(reload.w.testState.workouts.length,1);assert(reload.$('#workout-history').textContent.includes('20 min'));assert.equal(w.document.querySelectorAll('#exercise-week-chart [role=listitem]').length,7);
- // Elevation is visible under the map, and missing heights/paused legs stay disconnected.
+
  const elevation=use(),ew=elevation.w;
  const profile=[{lat:0,lon:0,ele:0},{lat:.001,lon:0,ele:6},{lat:.002,lon:0,ele:null},{lat:.003,lon:0,ele:12},{lat:.004,lon:0,ele:15},{lat:.006,lon:0,ele:18,breakBefore:true},{lat:.007,lon:0,ele:21}];
  ew.drawElevationProfile(ew.RunMath.analyze(profile,600));
@@ -67,19 +67,19 @@ const instances=[];const use=seed=>{const c=create(seed);instances.push(c);retur
  assert.equal(elevation.$('#elevation-chart polyline'),null);assert(elevation.$('#elevation-caption').textContent.includes('No elevation is invented'));
  ew.drawElevationProfile(ew.RunMath.analyze([{lat:0,lon:0,ele:0},{lat:.001,lon:0,ele:0}],20));
  assert(!elevation.$('#elevation-chart').innerHTML.includes('NaN'),'Flat sea-level altitude is valid');
- // Direct tabs and button choices: no menu needs opening to find saved sessions or change units.
+
  elevation.$('#exercise-show-history').click();assert.equal(elevation.$('#exercise-history-details').hidden,false);assert.equal(elevation.w.document.querySelector('.page.active').id,'exercise-log');
  elevation.$('#exercise-show-gps').click();assert.equal(elevation.$('#exercise-history-details').hidden,true);
  elevation.$('[data-exercise-choice="run-unit"][data-value="km"]').click();assert.equal(ew.testState.runUnit,'km');
  assert([...ew.document.querySelectorAll('#activity select')].every(s=>s.hidden));
- // GPX preview with no timestamps: don't assume a 45-minute workout or estimate calories.
+
  ew.testState.route=profile;ew.renderRoute();assert(elevation.$('#imported-route-status').textContent.includes('no elapsed time'));
  assert.equal(elevation.$('#run-pace').textContent,'—');assert.equal(elevation.$('#run-calories').textContent,'—');
  elevation.$('#imported-route-minutes').value='0';ew.saveImportedRoute();assert.equal(ew.testState.activities.length,0);
  elevation.$('#imported-route-minutes').value='25';ew.saveImportedRoute();assert.equal(ew.testState.activities.length,1);assert.equal(ew.testState.activities[0].minutes,25);
  ew.saveImportedRoute();assert.equal(ew.testState.activities.length,1,'Imported routes save only once');
- // Optional session readings round-trip to history and the correct journal date,
- // without replacing a day's general pulse, meals, or sleep.
+
+
  const vitals=use(),vw=vitals.w,vf=vitals.$('#workout-form');
  const day=vw.localDate();vw.testState.records.push({date:day,heart:'65',sleepHours:8,breakfast:'Toast'});
  vf.elements.sport.value='Swimming';vf.elements.date.value=day;vf.elements.minutes.value='30';
@@ -92,7 +92,7 @@ const instances=[];const use=seed=>{const c=create(seed);instances.push(c);retur
  assert.throws(()=>vw.validateExerciseVitals({bpmBefore:'0'}));assert.throws(()=>vw.validateExerciseVitals({bpmAfter:'301'}));assert.throws(()=>vw.validateExerciseVitals({bpmAfter:'70.5'}));assert.throws(()=>vw.validateExerciseVitals({temperature:'NaN'}));
  vitals.$('#workout-history button').click();assert.equal(vf.elements.bpmBefore.value,'70');vf.elements.bpmAfter.value='120';vf.dispatchEvent(new vw.Event('submit',{cancelable:true,bubbles:true}));
  vw.selectJournalDay(day);assert(vitals.$('#workout-history').textContent.includes('After: 120 bpm'));assert(!vitals.$('#workout-history').textContent.includes('After: 130 bpm'));
- // Weather lookup chooses the route's hour, records provenance, and never invents BPM.
+
  const start=new Date((Math.round(Date.now()/3600000)-1)*3600000).toISOString(),target=Date.parse(start)/1000;
  const weatherSession={id:'weather-run',date:day,startedAt:start,minutes:20,mode:'run',route:[{lat:40,lon:-80,ele:10}],temperature:null,temperatureSource:null,result:{calories:100}};
  vw.testState.activities.push(weatherSession);let requested;
@@ -104,13 +104,13 @@ const instances=[];const use=seed=>{const c=create(seed);instances.push(c);retur
  await vw.fetchRunWeather(weatherSession);assert.equal(weatherSession.temperature,18,'Automatic weather cannot overwrite a manual correction');
  weatherSession.weatherRequested=false;vw.fetch=async()=>{throw Error('offline');};await vw.fetchRunWeather(weatherSession);
  assert.equal(weatherSession.temperature,18);assert(weatherSession.weatherStatus.includes('Weather unavailable'));
- // A delayed response cannot replace a temperature typed while it was loading.
+
  let deliver;weatherSession.temperatureSource=null;weatherSession.temperature=null;weatherSession.weatherRequested=false;
  vw.fetch=()=>new Promise(resolve=>{deliver=()=>resolve({ok:true,json:async()=>({hourly:{time:[target],temperature_2m:[10]}})});});
  const pending=vw.fetchRunWeather(weatherSession);weatherSession.temperature=22;weatherSession.temperatureSource='manual';deliver();await pending;assert.equal(weatherSession.temperature,22);
- // Removing a session removes its linked journal readings, without deleting the journal.
+
  vw.testState.workouts=[];vw.renderExerciseProgress();vw.selectJournalDay(day);assert(!vitals.$('#workout-history').textContent.includes('After: 120 bpm'));assert.equal(vw.testState.records[0].heart,'65');
- // Pedestrian network validation replaces raw sketches before any estimate.
+
  function encodePolyline(points){let lastLat=0,lastLon=0,result='';const encode=n=>{let value=n<0?~(n<<1):n<<1,out='';while(value>=32){out+=String.fromCharCode((32|(value&31))+63);value>>>=5;}return out+String.fromCharCode(value+63);};for(const p of points){const lat=Math.round(p.lat*1e6),lon=Math.round(p.lon*1e6);result+=encode(lat-lastLat)+encode(lon-lastLon);lastLat=lat;lastLon=lon;}return result;}
  function routed(points,extra={}){return {trip:{status:0,legs:[{shape:encodePolyline(points),maneuvers:[{type:1,travel_mode:'pedestrian',instruction:'Walk'}],...extra}]}};}
  const drawing=use(),dw=drawing.w;let dragging=true;
@@ -135,31 +135,31 @@ const instances=[];const use=seed=>{const c=create(seed);instances.push(c);retur
  const rough=[{lat:0,lon:.002},{lat:.001,lon:.002}];assert(dw.validatePedestrianRoute(routed(path),rough).length>1,'A sketch 222 m off the path snaps instead of failing');assert.equal(query.locations[0].search_cutoff,500);
 
  const savedPlan=JSON.parse(dw.localStorage.getItem('longevity-simulator-v1'));assert.equal(savedPlan.plannedRoute.routingProvider,'valhalla-pedestrian');const restored=use(savedPlan);assert(restored.w.plannedSnapshot().verified);
- // Explicitly reject ferry crossings, disconnected paths and snapping far from a sketch.
+
  assert.throws(()=>dw.validatePedestrianRoute(routed(path,{maneuvers:[{type:28,travel_mode:'pedestrian'}]}),path),/Ferry/);
  assert.throws(()=>dw.validatePedestrianRoute(routed(path,{maneuvers:[{type:1,travel_mode:'drive'}]}),path),/pedestrian/);
  assert.throws(()=>dw.validatePedestrianRoute(routed(path),[{lat:1,lon:1},{lat:1.001,lon:1}]),/500 m/);
  assert.throws(()=>dw.validatePedestrianRoute({trip:{status:442}},path));assert.throws(()=>dw.decodePlannedPolyline('~'));
- // A mapped footbridge detour is allowed instead of drawing across open water.
+
  const bridge=[{lat:0,lon:0},{lat:0,lon:.001},{lat:.001,lon:.001},{lat:.001,lon:0}];const bridgePath=dw.validatePedestrianRoute(routed(bridge),path);assert(dw.analyzePlannedTerrain(bridgePath).distance>300);
- // Coordinate-based terrain values are identical on the return journey.
+
  const loop=[{lat:0,lon:0,ele:0},{lat:.001,lon:0,ele:10},{lat:.002,lon:0,ele:20},{lat:.001,lon:0,ele:10},{lat:0,lon:0,ele:0}];
  const loopAnalysis=dw.analyzePlannedTerrain(loop);assert.equal(loopAnalysis.gain,20);assert.equal(loopAnalysis.down,20);assert.equal(loopAnalysis.points[1].height,loopAnalysis.points[3].height);
- // Independent ACSM check: 70kg / 1km flat run = 70 active kcal; rest raises total only.
+
  const flat={distance:1000,gain:0,excluded:0,altitudePoints:1};const fast=dw.plannedCalorieEstimate(flat,5,70,'run'),slow=dw.plannedCalorieEstimate(flat,7,70,'run');assert.equal(fast.active,70);assert.equal(slow.active,70);assert(slow.total>fast.total);
  assert.equal(dw.plannedCalorieEstimate(flat,8,70,'run').active,70,'Transition pace keeps an approximate calorie estimate');assert.equal(dw.plannedCalorieEstimate({...flat,excluded:1,gain:200},6,70,'run').active,70,'Uncertain terrain falls back to level-ground calories');
  assert.equal(dw.plannedCalorieEstimate(flat,20,70,'run').active,null);assert.equal(dw.plannedCalorieEstimate(flat,20,70,'walk').active,35);
- // Failure is closed: no route number is presented without pedestrian validation.
+
  drawing.$('#route-draw-toggle').click();assert.equal(dragging,true);drawing.$('#route-draw-toggle').click();pointer('pointerdown',20);pointer('pointerup',20);
  dw.fetch=async()=>{throw Error('routing offline');};await dw.validatePlannedPath();assert.equal(dw.plannedSnapshot().verified,false);assert.equal(drawing.$('#planned-distance').textContent,'—');
  drawing.$('#route-draw-undo').click();assert(dw.plannedSnapshot().verified,'Undo restores the prior verified route');drawing.$('#route-draw-clear').click();assert.equal(dw.plannedSnapshot().points.length,0);
- // End-to-end out-and-back elevation lookup deduplicates coordinates, not route indices.
+
  pointer('pointerdown',0);pointer('pointermove',20);pointer('pointerup',0);
  dw.fetch=async()=>({ok:true,json:async()=>routed(loop)});await dw.validatePlannedPath();dw.resetTerrainCache();
  let uniqueCount=0;dw.fetch=async url=>{const query=new URL(url).searchParams,lat=query.get('latitude').split(',').map(Number),lon=query.get('longitude').split(',').map(Number);const keys=lat.map((v,i)=>v+','+lon[i]);assert.equal(new Set(keys).size,keys.length);uniqueCount+=keys.length;return {ok:true,json:async()=>({elevation:lat.map(v=>v*10000)})};};await dw.loadPlannedElevation();
  const returned=dw.plannedSnapshot().points;assert(uniqueCount<returned.length);const terrain=dw.analyzePlannedTerrain(returned);assert(Math.abs(terrain.gain-terrain.down)<1e-9);assert.equal(terrain.points[0].height,terrain.points.at(-1).height);
  drawing.$('#route-draw-clear').click();
- // Long zigzag sketches keep their turns and use bounded requests.
+
  for(let i=0;i<60;i++)dw.appendPlannedPoint({lat:i*.001,lon:(i%2)*.001});
  let routeCalls=0;
  dw.fetch=async url=>{const q=JSON.parse(new URL(url).searchParams.get('json'));assert(q.locations.length<=8);routeCalls++;drawing.advance(2);return {ok:true,json:async()=>routed(q.locations)};};

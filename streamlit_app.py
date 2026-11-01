@@ -26,7 +26,7 @@ def login_screen(db):
         if submitted:
             try:
                 user = db.sign_in(email, password)
-                st.session_state.clear()  # Remove the password widget state.
+                st.session_state.clear()
                 st.session_state.user = user
                 st.rerun()
             except ValueError as error:

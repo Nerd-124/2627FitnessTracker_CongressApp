@@ -15,8 +15,8 @@ class ModelTests(unittest.TestCase):
         flat = activity({**base,'gain':0})
         hill = activity({**base,'gain':100})
         self.assertEqual(hill['uphill'], 63)
-        self.assertAlmostEqual(hill['calories']-flat['calories'], 63, delta=1)  # independently rounded outputs
-        # 500m/minute-independent vertical oxygen cost for the same ascent.
+        self.assertAlmostEqual(hill['calories']-flat['calories'], 63, delta=1)
+
         self.assertEqual(activity({**base,'gain':100,'minutes':30})['uphill'],63)
 
     def test_weather_is_context_not_fabricated_energy(self):

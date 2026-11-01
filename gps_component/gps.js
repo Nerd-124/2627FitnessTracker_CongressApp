@@ -1,7 +1,7 @@
-/* The only custom JavaScript in the Python app.
- * Browsers require JavaScript to request their GPS sensor. This adapter only
- * forwards raw fixes to Python; it does not calculate distance or calories.
- */
+
+
+
+
 let watchId = null;
 let wakeLock = null;
 let lastToken = null;

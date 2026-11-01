@@ -1,5 +1,4 @@
 'use strict';
-// Free, local planning rules. No provider requests or language-model claims.
 const FreeCoach=(()=>{
  const normalize=t=>t.toLowerCase().replace(/[’‘]/g,"'").replace(/\bdon't\b/g,'do not').replace(/\bcan't\b/g,'cannot');
  const numbers={one:1,two:2,three:3,four:4,five:5,six:6,seven:7};
@@ -130,7 +129,7 @@ const FreeCoach=(()=>{
     if(index===0)activity=primary;
     else if(index===1)activity=i%2===0?primary:(primary==='strength'?fallback:strengthGoal?pick('strength'):favorites[1]||pick('yoga'));
     else activity=available[(i+variation)%available.length]||fallback;
-    // Avoid consecutive strength sessions; a requested seven-day schedule includes light movement days.
+
     if(activity==='strength'&&used.at(-1)?.activity==='strength'&&offset-used.at(-1).offset===1)activity=pick('yoga',fallback);
     used.push({activity,offset});
     tasks.push({title:sessionTitle(activity,duration,index),category:'move',dayOffset:offset,minutes:duration});
@@ -157,7 +156,6 @@ const FreeCoach=(()=>{
  return {reply};
 })();
 
-// Local assistant: deterministic record summaries and bounded guidance, no API calls.
 const LocalAssistant=(()=>{
  const n=(value,min=0,max=1e7)=>typeof value!=='boolean'&&value!==null&&value!==''&&value!==undefined&&Number.isFinite(Number(value))&&Number(value)>=min&&Number(value)<=max?Number(value):null;
  const fmt=value=>Number.isInteger(value)?String(value):value.toFixed(1);

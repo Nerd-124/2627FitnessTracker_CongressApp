@@ -63,7 +63,7 @@ function adoptCoachPlan(option){
  const tasks=option.tasks.map(task=>({id:crypto.randomUUID(),title:task.title,category:task.category,schedule:'once',days:[],date:plannerDateAdd(start,task.dayOffset),minutes:task.minutes}));
  const plan={id:crypto.randomUUID(),title:option.title,goal:goal.slice(0,500),horizon:'week',start,end:plannerDateAdd(start,6),budget,movementGoal:null,focus:[...new Set(tasks.map(t=>t.category).filter(c=>['move','rest','food'].includes(c)))],days:[...new Set(tasks.filter(t=>t.category==='move').map(t=>journalDayDate(t.date).getDay()))],activity:'',notes:'Chosen from the free built-in coach. Review and adjust to your needs.',tasks,reasons:['Built-in coach suggestion: '+option.summary,option.why,'Chosen by you on '+localDate()+'. These are rule-based suggestions, not medical prescriptions.'],checkins:{},source:'free-chat-coach',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
  plan.tasks=plan.tasks.map(task=>validatePlannerTask(task,plan));
- // Changing the active plan leaves earlier plans and their check-ins intact.
+
  savePlannerState([...state.plans,plan],plan.id);
  plannerDraft=null;plannerViewStart=null;$('#planner-builder').hidden=true;$('#planner-draft').hidden=true;renderPlanner();renderCoachToday();
  $('#coach-status').textContent=start===localDate()?'Plan added. Your first actions are on Today; the full week is editable in My plan.':`Plan added for ${start}. Today shows its actions when that date arrives. Edit the full plan in My plan.`;

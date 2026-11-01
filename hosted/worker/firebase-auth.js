@@ -1,5 +1,5 @@
-// Authentication is verified by Firebase's official accounts:lookup service.
-// Decoding a JWT below is only input validation; it never establishes identity.
+
+
 const SESSION_COOKIE='__Host-longevity-google';
 const verifiedTokens=new Map();
 function authError(message,status=401){const e=Error(message);e.status=status;return e;}
@@ -22,7 +22,7 @@ async function verifyGoogleToken(token){
  try{response=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+encodeURIComponent(FIREBASE_CONFIG.apiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:token}),redirect:'manual',signal:controller.signal});}
  catch{throw authError('Google sign-in verification is temporarily unavailable. Try again.',503);}
  finally{clearTimeout(timer);}
- // Never forward the identity token to a redirected destination.
+
  if(response.status>=300&&response.status<400)throw authError('Google sign-in verification is temporarily unavailable.',503);
  if(!response.ok)throw authError(response.status>=500?'Google sign-in verification is temporarily unavailable.':'Google sign-in expired or could not be verified.',response.status>=500?503:401);
  let account;try{account=(await response.json()).users?.[0];}catch{throw authError('Google sign-in verification is temporarily unavailable.',503);}

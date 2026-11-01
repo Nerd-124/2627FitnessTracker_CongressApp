@@ -59,7 +59,7 @@ def save_finished_run(db, user, recorder):
 
 
 def live_recorder(db, user, profile, mode, unit):
-    # A fragment updates this section once a second without redrawing the app.
+
     @st.fragment(run_every=1.0)
     def live_panel():
         recorder = st.session_state.recorder
@@ -185,7 +185,7 @@ def review_saved_run(db, user, unit):
 
     @st.fragment(run_every=0.5)
     def playback():
-        # Both playback timing and the moving map marker are controlled by Python.
+
         key = runs[selected]["key"]
         seek = st.slider("Seek along the route (%)", 0, 100, 0, key=f"seek_{key}")
         playing = st.checkbox("Play route", key=f"playing_{key}")

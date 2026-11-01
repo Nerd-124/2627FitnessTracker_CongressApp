@@ -1,4 +1,3 @@
-// Guideline comparisons are educational checklist items, never a clinical score.
 const RoutineEvidence=(()=>{
  const sources={mental:['WHO-5 official instrument','https://www.who.int/publications/m/item/WHO-UCN-MSD-MHE-2024.01'],movement:['WHO activity guidelines','https://www.who.int/publications/i/item/9789240015128'],sleep:['CDC sleep guidance','https://www.cdc.gov/sleep/about/index.html'],smoking:['CDC benefits of quitting','https://www.cdc.gov/tobacco/about/benefits-of-quitting.html']};
  const num=(v,max=100000)=>v==null||v===''||typeof v==='boolean'?null:Number.isFinite(Number(v))&&Number(v)>=0&&Number(v)<=max?Number(v):null;
@@ -19,7 +18,6 @@ const RoutineEvidence=(()=>{
   const movement=sum('movement'),movementDays=count('movement'),sleep=avg('sleep')??num(base.sleep,24),sleepNights=count('sleep'),checks=[];
   const add=(key,title,value,met,detail,action,source,coverage='')=>checks.push({key,title,value,met,detail,action,source:sources[source]||null,coverage});
   const target=teen?420:150,reported=num(base.exercise,10080),movementValue=movement??reported;
-  // Mixed/intensity-unknown GPS and manual minutes cannot certify aerobic guidance.
   let qualified=0;const gymDays=new Set();for(const day of days){let sessionQualified=0;for(const s of sessions.filter(s=>s.date===day)){const minutes=num(s.minutes,1440)||0;if(s.sport==='strength'){gymDays.add(s.date);continue;}if(['moderate','vigorous'].includes(s.intensity))sessionQualified+=minutes*(s.intensity==='vigorous'&&!teen?2:1);}const record=records.get(day)||{},manual=['moderate','vigorous'].includes(record.exerciseIntensity)?(num(record.duration,1440)||0)*(record.exerciseIntensity==='vigorous'&&!teen?2:1):0;qualified+=Math.max(sessionQualified,manual);}
 
   const aerobicMet=age===null?null:qualified>=target?true:movement===null&&reported!==null&&['moderate','vigorous'].includes(base.movementIntensity)?reported*(base.movementIntensity==='vigorous'&&!teen?2:1)>=target:movementDays===7&&movement===0?false:null;
@@ -44,7 +42,6 @@ const RoutineEvidence=(()=>{
 })();
 
 'use strict';
-// Visual scenario model only. Keep it independent of clinical or lifespan predictions.
 const FutureSelf=(()=>{
  const tones=['#f1d0b5','#dfb18d','#bd8763','#8c5d43','#573b2d'];
  const clamp=(n,lo,hi)=>Math.max(lo,Math.min(hi,n));
@@ -77,8 +74,7 @@ const FutureSelf=(()=>{
   const shirt=appearance.shirt||'#4d9275';
   const mouth=neutral?'M111 77Q120 84 130 77':energy==='high'?'M109 76Q120 90 132 75':energy==='low'?'M109 82Q120 72 132 82':'M111 79Q121 77 130 80';
   const eyes=fatigue?'<path data-avatar-eyes="tired" d="M103 64Q109 69 115 64M126 64Q132 69 138 64" fill="none" stroke="#354b40" stroke-width="2.6" stroke-linecap="round"/><path d="M103 71Q109 74 115 71M126 71Q132 74 138 71" fill="none" stroke="#795f50" stroke-width="1.4" opacity=".6"/>':'<g data-avatar-eyes="open"><circle cx="109" cy="62" r="2.4" fill="#354b40"/><circle cx="132" cy="62" r="2.4" fill="#354b40"/></g>';
-  // Pose and energy symbols illustrate entered habits. Never infer disease,
-  // disability, body size, or skin tone from a habit index or BMI.
+
   return `<title>Custom avatar at age ${age}</title><desc>Custom appearance and artistic age details. This avatar does not estimate health, energy, disability or future appearance.</desc>
   <ellipse cx="120" cy="263" rx="55" ry="9" fill="#cbdccf"/>
   <g data-avatar-shape="${appearance.shape||'regular'}" transform="translate(${120*(1-bodyScale)} 0) scale(${bodyScale} 1)" data-avatar-body="${appearance.body||'male'}" data-avatar-pose="neutral" data-avatar-slump="${slump}"><path d="${appearance.accessibility==='wheelchair'?'M93 174V207Q94 214 105 214H147L158 240H177L161 200Q160 195 151 195H125V174Z':'M98 177L90 246Q94 258 106 250L121 195L132 250Q146 258 149 246L141 174'}" fill="#325d4d"/>
@@ -114,8 +110,7 @@ const FutureSelf=(()=>{
   }
   for(const [date,value]of sessionMinutes)minutes.set(date,Math.max(minutes.get(date)||0,value));
   const total=[...minutes.values()].reduce((a,b)=>a+b,0);
-  // A partial week cannot establish low weekly movement. Use the entered
-  // profile until all seven days are logged, or a known 150 minutes is reached.
+
   const useMovement=minutes.size===7||total>=(data.profile?.age<18?420:150);
   if(useMovement)values.exercise=Math.min(600,total);
   if(nights.length)values.sleep=nights.reduce((a,b)=>a+b,0)/nights.length;

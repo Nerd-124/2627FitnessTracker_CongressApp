@@ -14,7 +14,7 @@ final class LiveAppModel: NSObject, ObservableObject {
     @Published var loadError: String?
     @Published var notice: String?
     @Published var sharedFile: SharedFile?
-    // Keep one web view for this app session, including ordinary background/foreground transitions.
+
     var webView: WKWebView?
     let location = NativeLocationBridge()
     let googleAuth = GoogleAuthentication()
@@ -60,7 +60,7 @@ struct ContentView: View {
                 }.padding(30).frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(uiColor: .systemBackground))
             }
-            // Kept at the edge so the website's navigation and design remain intact.
+
             Button { menuOpen = true } label: {
                 Image(systemName: "ellipsis.circle.fill").font(.title2)
                     .symbolRenderingMode(.palette).foregroundStyle(.white, Color(red: 0.2, green: 0.36, blue: 0.27))

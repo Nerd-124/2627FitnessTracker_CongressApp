@@ -85,8 +85,8 @@ function failRunGPS(message){if(!activeRun)return;pauseRun(message);activeRun.gp
 function runGPSError(error){
  if(!runIsActive())return;
  if(Number(error.code)===1){failRunGPS(gpsErrorText(error));return;}
- // POSITION_UNAVAILABLE and TIMEOUT can be temporary. Keep the watch alive
- // until the acquisition deadline, or retain an active route during signal loss.
+
+
  $('#run-feedback').textContent=activeRun.phase==='acquiring'
   ? 'Still looking for precise GPS. The wait clock continues, with a 45-second limit. Check location settings and move outdoors.'
   : 'GPS signal is temporarily unavailable. Active time continues; distance waits for a usable fix. Long gaps are not connected.';
@@ -100,8 +100,8 @@ function beginRunWatch(){
   const id=navigator.geolocation.watchPosition(success,failure,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
   if(token!==gpsWatchToken||!runIsActive()){navigator.geolocation.clearWatch(id);return;}
   watchId=id;runTick=setInterval(()=>{if(token===gpsWatchToken)tickRunWatch();},1000);
-  // Some browsers refresh getCurrentPosition more promptly than watchPosition.
-  // Both are guarded by the same token and timestamp validation.
+
+
   navigator.geolocation.getCurrentPosition?.(success,failure,{enableHighAccuracy:true,maximumAge:0,timeout:12000});
  }catch(error){if(token===gpsWatchToken)failRunGPS(gpsErrorText(error));}
 }

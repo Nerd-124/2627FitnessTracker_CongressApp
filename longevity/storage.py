@@ -102,7 +102,7 @@ class Database:
             user = connection.execute(
                 "SELECT * FROM users WHERE email=?", (email,)
             ).fetchone()
-        # A dummy hash makes unknown accounts take a similar amount of work.
+
         salt = user["salt"] if user else "00" * 16
         actual = password_hash(password, salt)
         if not user or not hmac.compare_digest(actual, user["password_hash"]):

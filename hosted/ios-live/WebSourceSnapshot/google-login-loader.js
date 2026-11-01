@@ -1,5 +1,4 @@
 'use strict';
-// Native sign-in does not load Firebase's browser SDK or open Google in a web view.
 const googleButton=document.querySelector('#google-signin'),googleStatus=document.querySelector('#google-auth-status'),googleRetry=document.querySelector('#google-auth-retry');
 const googleNative=!!window.webkit?.messageHandlers?.nativeAuth;
 let googleBrowser;

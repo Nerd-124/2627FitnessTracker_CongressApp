@@ -1,7 +1,6 @@
 'use strict';
 let coachConnected=false,coachBusy=false,coachHistory=[],coachOptions=[],coachOptionsStart=null,coachPreferences={};
 function coachContext(){
- // Read only the metadata needed for local answers, never route coordinates.
  return {today:localDate(),profile:{age:state.profile.age},records:state.records,
   activities:state.activities,workouts:state.workouts};
 }
@@ -38,7 +37,6 @@ function appendCoachActions(actions){
  for(const action of actions){const button=document.createElement('button');button.type='button';button.className='pill';button.textContent=action.label+' →';button.onclick=()=>coachAction(action);group.append(button);}
  $('#coach-conversation').lastElementChild.append(group);
 }
-// Retained as a no-op for older exercise integrations; planning UI was removed.
 function renderCoachToday(){}
 
 function sendCoach(event){
@@ -75,7 +73,6 @@ function initializeCoachDock(){
  };
  $('#coach-minimize').onclick=minimize;
  panel.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();minimize();}});
- // Keep the composer above the iPhone keyboard without changing the page scroll.
  function fitViewport(){
   const viewport=window.visualViewport;if(!viewport)return;
   const offset=Math.max(0,window.innerHeight-viewport.height-viewport.offsetTop);

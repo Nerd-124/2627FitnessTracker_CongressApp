@@ -206,8 +206,6 @@ function initializePlanner(){
  syncPlannerExercise();renderPlanner();
 }
 
-// Automatic check-ins retain provenance so deleting/discarding evidence can undo
-// an automatic completion without touching deliberate manual check-ins.
 let plannerExerciseSyncing=false;
 function plannerExerciseKind(title){
  const text=String(title||'').toLowerCase();
@@ -224,7 +222,7 @@ function plannerExerciseKind(title){
 function plannerExerciseRequirement(task){
  if(task.category!=='move')return null;
  const title=String(task.title||'');
- // These need verification beyond the tracker, so leave them to manual check-in.
+
  if(/\b(under|faster than|pace|bpm|heart rate|reps|sets|continuous|without stopping)\b|\d\s*[:/x×]\s*\d/.test(title))return null;
  const kind=plannerExerciseKind(title);if(!kind)return null;
  let minutes=Number(task.minutes)||0;
@@ -244,13 +242,13 @@ function plannerExerciseEvidence(){
  }
  if(activeRun?.points?.length){
   const analysis=runAnalysis||RunMath.analyze(activeRun.points,currentRunSeconds());
-  // A running timer without a measured route is not evidence of a run.
+
   if(analysis.distance>=10&&currentRunSeconds()>0&&!map.has(activeRun.id))map.set(activeRun.id,{id:activeRun.id,date:activeRun.date,kind:activeRun.mode==='run'?'running':'walking',minutes:currentRunSeconds()/60,meters:analysis.distance,live:true});
  }
  return [...map.values()];
 }
 function syncPlannerExercise(){
- // My Plan is retired. Historical plans stay in local storage without updates.
+
  if(!$('#planner'))return;
  if(plannerExerciseSyncing||!state.plans.length||!exerciseCanSave())return;
  plannerExerciseSyncing=true;
@@ -277,7 +275,7 @@ function syncPlannerExercise(){
       candidates.set(key,{sessionIds:[...pool.ids].sort(),kind:requirement.kind,minutes:requirement.minutes,meters:requirement.meters});
       if(pool.live&&plan.id===current?.id&&date===localDate())liveCompleted=true;
      }
-     // Reserve this task's share before another task of the same kind.
+
      const share=Math.min(1,Math.max(requirement.minutes?requirement.minutes/Math.max(pool.minutes,1e-9):0,requirement.meters?requirement.meters/Math.max(pool.meters,1e-9):0));
      pool.minutes*=1-share;pool.meters*=1-share;
     }

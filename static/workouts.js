@@ -1,5 +1,5 @@
 'use strict';
-// Broad educational MET presets, not individually measured expenditure.
+
 const workoutTypes = {
  swimming:{label:'Swimming',met:{light:5.8,moderate:8,vigorous:9.8}},
  basketball:{label:'Basketball',met:{light:4.5,moderate:6,vigorous:8}},
@@ -109,7 +109,7 @@ function renderExerciseProgress(){
 }
 function initializeWorkouts(){
  const form=$('#workout-form');
- // Activity is a free-text input; no dropdown limits what can be recorded.
+
  form.elements.date.max=localDate();
  $('#exercise-show-gps').onclick=()=>showExerciseTool('gps');$('#exercise-show-workouts').onclick=()=>showExerciseTool('workouts');
  form.addEventListener('input',()=>{form.dataset.dirty='true';previewWorkout();});form.addEventListener('change',previewWorkout);

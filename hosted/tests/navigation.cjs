@@ -5,7 +5,7 @@ const w=dom.window,d=w.document;let change;
 const media={matches:true,addEventListener:(type,fn)=>change=fn};w.matchMedia=()=>media;
 w.HTMLDialogElement.prototype.showModal=function(){this.open=true};
 w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
-// Existing listeners must survive moving the controls.
+
 let navigated=false;d.querySelector('[data-page="activity"]').addEventListener('click',()=>navigated=true);
 w.eval(fs.readFileSync('web/navigation.js','utf8'));
 const drawer=d.querySelector('#mobile-side-menu'),trigger=d.querySelector('#open-side-menu');

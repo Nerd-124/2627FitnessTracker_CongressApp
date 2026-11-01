@@ -1,6 +1,5 @@
 'use strict';
-// WHO-5 content © World Health Organization 2024, CC BY-NC-SA 3.0 IGO.
-// Official questions and score are unchanged. App letter bands are not WHO categories.
+
 const WHO5=(()=>{
  const source='https://www.who.int/publications/m/item/WHO-UCN-MSD-MHE-2024.01';
  const questions=['I have felt cheerful and in good spirits','I have felt calm and relaxed','I have felt active and vigorous','I woke up feeling fresh and rested','My daily life has been filled with things that interest me'];

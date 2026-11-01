@@ -49,7 +49,7 @@ def render(db, user):
             sleep=sleep,
             plants=plants,
         )
-        simulate(updated)  # Validate the same data used by the scenario screen.
+        simulate(updated)
         db.save(user["id"], "profile", "main", updated)
         st.session_state["notice"] = "Your Python profile is ready."
         st.rerun()

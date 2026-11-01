@@ -1,5 +1,5 @@
 'use strict';
-// A small, deterministic conversation engine. It never calls an AI provider.
+
 const FreeCoach=(()=>{
  const normalize=text=>text.toLowerCase().replace(/[’‘]/g,"'").replace(/\bdon't\b/g,'do not').replace(/\bcan't\b/g,'cannot');
  const activities=[['running',/\b(run|running|jog|jogging)\b/,'An easy run/walk at a comfortable effort'],['walking',/\b(walk|walking|hike|hiking)\b/,'A comfortable walk'],['swimming',/\b(swim|swimming|pool)\b/,'Easy swimming with breaks'],['basketball',/\bbasketball\b/,'Easy basketball skills practice'],['cycling',/\b(cycle|cycling|bike|biking)\b/,'Comfortable cycling'],['dancing',/\b(dance|dancing)\b/,'Easy dancing to music you enjoy'],['yoga',/\b(yoga|stretch|stretching)\b/,'Gentle mobility within a comfortable range'],['strength',/\b(strength|weights|muscle|bodyweight)\b/,'Easy familiar bodyweight movements with rest']];
@@ -64,7 +64,7 @@ const FreeCoach=(()=>{
     else if(index===2&&!prefs.activity&&i%2===1)title=excluded.has('yoga')?generic:'Gentle mobility within a comfortable range';
     tasks.push({title,category:'move',dayOffset:offset,minutes});
    }
-   // Day zero is always present; when unavailable for exercise, it is a planning action.
+
    if(!selected.includes(0))tasks.push({title:'Choose times and prepare for your planned sessions',category:'custom',dayOffset:0,minutes:Math.min(5,budget)});
    const restDay=Array.from({length:7},(_,i)=>i).find(i=>!selected.includes(i)&&(selected.includes(0)||i!==0));
    if(restDay!==undefined)tasks.push({title:prefs.goal==='energy'?'Take a quiet wind-down break':'Rest and notice how your routine feels',category:'rest',dayOffset:restDay,minutes:Math.min(5,budget)});

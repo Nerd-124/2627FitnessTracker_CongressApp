@@ -1,4 +1,4 @@
-// Run with MINIFLARE_MODULE pointing to an installed miniflare entrypoint.
+
 const {Miniflare}=await import(process.env.MINIFLARE_MODULE||'miniflare');
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';

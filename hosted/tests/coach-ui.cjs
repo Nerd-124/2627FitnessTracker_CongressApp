@@ -13,7 +13,7 @@ try{
  $('#coach-message').value='Keep my draft';$('#coach-minimize').click();assert(panel.hidden);assert.equal($('#coach-message').value,'Keep my draft');launcher.click();panel.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert(panel.hidden);assert.equal(w.document.activeElement,launcher);assert.equal($('.page.active').id,current);launcher.click();
  say('hello');assert(last().textContent.includes('free built-in assistant'));
  say('summarize my week');assert(last().textContent.includes('0/7'));assert(last().querySelector('button'));
- // Fresh context on every turn; user records never leave the browser.
+
  w.testState.records.push({date:w.today,bed:'23:00',wake:'06:00',duration:20,notes:'Retain my note'});
  say('summarize my week');assert(last().textContent.includes('20 minutes across 1/7'));assert(last().textContent.includes('7 hours on average'));
  const chat=$('#coach-conversation').textContent;$('#coach-minimize').click();launcher.click();assert.equal($('#coach-conversation').textContent,chat);

@@ -29,7 +29,7 @@ function initializeSteps(){
  $('#steps-refresh').onclick=()=>requestSteps();$('#steps-disable').onclick=()=>requestSteps(false);
  const old=renderRecords;renderRecords=function(){old();renderSteps();};renderSteps();window.addEventListener('longevity-steps',event=>receiveNativeSteps(event.detail));
  try{stepsDeletedDays=new Set(JSON.parse(localStorage.getItem(KEY+':steps-deleted-days'))||[]);stepsEnabled=localStorage.getItem(KEY+':steps-enabled')==='true';}catch{}
- // Always get a fresh native acknowledgement; browser storage cannot approve a phone.
+
  stepSourceID=null;
  if(window.__longevityNative?.steps)requestSteps(stepsEnabled);else{$('#steps-enable').hidden=true;$('#steps-status').textContent='Synced steps from your linked iPhone.';}
 }

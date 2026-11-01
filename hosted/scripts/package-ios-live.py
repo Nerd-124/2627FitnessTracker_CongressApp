@@ -6,7 +6,7 @@ source=root/'ios-live';snapshot=source/'WebSourceSnapshot'
 snapshot.mkdir(exist_ok=True)
 for old in snapshot.iterdir():
     if old.is_file(): old.unlink()
-# The exported web snapshot contains application source, never this ZIP or its download page.
+
 for p in (root/'web').iterdir():
     if p.is_file() and p.suffix in {'.html','.js','.css','.png','.py','.csv','.gpx','.webmanifest'} and p.name!='xcode-export.html':
         shutil.copyfile(p,snapshot/p.name)

@@ -101,7 +101,7 @@ struct TodayView: View {
 }
 
 
-// Draft fields keep Cancel from changing the saved profile.
+
 struct ProfileSetupView: View {
     let isOnboarding: Bool
     var onSave: () -> Void = {}
@@ -168,7 +168,7 @@ struct ProfileSetupView: View {
         }
         .onChange(of: period) { _, new in
             guard didLoad else { return }
-            // Preserve the approximate weekly amount when changing units.
+
             if new == "Daily" { minutes = min(600, Int((Double(minutes) / 7 / 5).rounded()) * 5) }
             else { minutes = min(4200, minutes * 7) }
         }

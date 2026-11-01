@@ -1,4 +1,4 @@
-// Finished-run storage is scoped exclusively to the verified Google identity.
+
 function runStorageError(message,status=400){const error=Error(message);error.status=status;return error;}
 async function runJSON(request){requireSameOriginJSON(request);const reader=request.body?.getReader();if(!reader)throw runStorageError('Run data is required.');let size=0;const chunks=[];while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>1800000){await reader.cancel();throw runStorageError('This route is too large to sync. Your device copy is kept.',413);}chunks.push(value);}const bytes=new Uint8Array(size);let at=0;for(const part of chunks){bytes.set(part,at);at+=part.length;}try{return JSON.parse(new TextDecoder().decode(bytes));}catch{throw runStorageError('Invalid run data.');}}
 function validatedRun(raw,id){

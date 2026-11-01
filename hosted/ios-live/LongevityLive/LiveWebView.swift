@@ -14,7 +14,7 @@ struct LiveWebView: UIViewRepresentable {
             return existing
         }
         let configuration = WKWebViewConfiguration()
-        // Stable cookies and localStorage survive normal app updates/relaunches.
+
         configuration.websiteDataStore = .default()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
@@ -41,9 +41,9 @@ struct LiveWebView: UIViewRepresentable {
     }
     func updateUIView(_ webView: WKWebView, context: Context) { }
     static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
-        // LiveAppModel owns the web session. A SwiftUI view reconstruction must
-        // not stop a run, clear its handlers, or perform another sign-in load.
-        // Explicit pause/finish/sign-out still stop native location normally.
+
+
+
     }
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate {
@@ -71,7 +71,7 @@ struct LiveWebView: UIViewRepresentable {
         }
         private func show(_ error: Error) {
             let code = (error as NSError).code
-            guard code != NSURLErrorCancelled, code != 102 else { return } // cancelled / download conversion
+            guard code != NSURLErrorCancelled, code != 102 else { return }
             model.loading = false
             model.loadError = error.localizedDescription
         }
@@ -96,7 +96,7 @@ struct LiveWebView: UIViewRepresentable {
             decisionHandler(navigationResponse.canShowMIMEType ? .allow : .download)
         }
         func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-            // Keep same-site/auth links in the existing persistent cookie store.
+
             if navigationAction.targetFrame == nil, let url = navigationAction.request.url {
                 if AppConfiguration.isWebsite(url) || AppConfiguration.isAuthentication(url) { webView.load(navigationAction.request) }
                 else if url.scheme == "https" { UIApplication.shared.open(url) }

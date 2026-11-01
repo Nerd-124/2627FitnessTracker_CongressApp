@@ -3,7 +3,7 @@ const $ = s => document.querySelector(s);
 const KEY = window.LONGEVITY_ACCOUNT ? 'longevity-account-v1:'+window.LONGEVITY_ACCOUNT.storageKey : 'longevity-simulator-v1';
 let clearingData=false;
 let state = {profile:{age:null,height:null,weight:null,sex:'unspecified'},habits:{exercise:null,sleep:null},records:[],route:[],onboardingComplete:false,baselineHabits:null,baselineRecord:null,dailyGoals:{},activities:[],workouts:[],plans:[],plannerActiveId:null,eegRecordings:[],runDraft:null,runUnit:"mi"};
-try {const saved=JSON.parse(localStorage.getItem(KEY));if(saved && typeof saved==='object'){state.routinePromptSeen=saved.routinePromptSeen===true;state.nutrition=saved.nutrition||{};state.futureSelf=saved.futureSelf||null;state.runDraft=saved.runDraft||null;state.runUnit=saved.runUnit==="km"?"km":"mi";state.activities=Array.isArray(saved.activities)?saved.activities:[];state.workouts=Array.isArray(saved.workouts)?saved.workouts:[];state.plans=Array.isArray(saved.plans)?saved.plans:[];state.plannerActiveId=saved.plannerActiveId||null;state.eegRecordings=Array.isArray(saved.eegRecordings)?saved.eegRecordings:[];state.dailyGoals=saved.dailyGoals&&typeof saved.dailyGoals==='object'&&!Array.isArray(saved.dailyGoals)?saved.dailyGoals:{};state.onboardingComplete=saved.onboardingComplete===true;state.baselineHabits=saved.baselineHabits||null;state.baselineRecord=saved.baselineRecord||null;if(saved.profile)Object.assign(state.profile,saved.profile);if(saved.habits)Object.assign(state.habits,saved.habits);if(Array.isArray(saved.records))state.records=saved.records;if(Array.isArray(saved.route))state.route=saved.route;}}catch {}
+try {const saved=JSON.parse(localStorage.getItem(KEY));if(saved && typeof saved==='object'){state.routinePromptSeen=saved.routinePromptSeen===true;state.nutrition=saved.nutrition||{};state.futureSelf=saved.futureSelf||null;state.runDraft=saved.runDraft||null;state.runUnit=saved.runUnit==="km"?"km":"mi";state.activities=Array.isArray(saved.activities)?saved.activities:[];state.workouts=Array.isArray(saved.workouts)?saved.workouts:[];state.plans=Array.isArray(saved.plans)?saved.plans:[];state.plannerActiveId=saved.plannerActiveId||null;state.eegRecordings=Array.isArray(saved.eegRecordings)?saved.eegRecordings:[];state.dailyGoals=saved.dailyGoals&&typeof saved.dailyGoals==='object'&&!Array.isArray(saved.dailyGoals)?saved.dailyGoals:{};state.onboardingComplete=saved.onboardingComplete===true;state.baselineHabits=saved.baselineHabits||null;state.baselineRecord=saved.baselineRecord||null;if(saved.profile)Object.assign(state.profile,saved.profile);if(saved.habits)Object.assign(state.habits,saved.habits);if(Array.isArray(saved.records))state.records=saved.records;if(Array.isArray(saved.route))state.route=saved.route;}}catch {   }
 
 function seedGuestSample(){
  if(window.LONGEVITY_ACCOUNT?.provider!=='judge'||window.LONGEVITY_ACCOUNT.storageKey!=='judge-demo-v1')return;
@@ -29,15 +29,17 @@ function seedGuestSample(){
  }
  sample.records.sort((a,b)=>a.date.localeCompare(b.date));
  sample.onboardingComplete=true;sample.routinePromptSeen=true;
- try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{}
+ try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{ }
 }
 seedGuestSample();
+
 function seedGuestMentalSample(){
  if(window.LONGEVITY_ACCOUNT?.provider!=='judge'||window.LONGEVITY_ACCOUNT.storageKey!=='judge-demo-v1')return;
  const marker=KEY+':sample-who5-october-v1';try{if(localStorage.getItem(marker))return;}catch{return;}
  const sample=JSON.parse(JSON.stringify(state)),today=localDate();
  const examples=[['2026-10-01',[3,3,3,2,3]],['2026-10-15',[4,4,3,4,4]],['2026-10-29',[4,4,4,4,5]]];
  for(const [date,answers] of examples){
+
   let row=sample.records.find(r=>r.date===date);
   if(row?.who5||row&&!row.sampleData)continue;
   if(!row){row={date,sampleData:true};sample.records.push(row);}
@@ -45,9 +47,10 @@ function seedGuestMentalSample(){
   row.notes=(row.notes?row.notes+' ':'')+'FICTIONAL WHO-5 DEMO — invented responses, not a real assessment.';
  }
  sample.records.sort((a,b)=>a.date.localeCompare(b.date));
- try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{}
+ try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{ }
 }
 seedGuestMentalSample();
+
 function simplifyGuestOctober(){
  if(window.LONGEVITY_ACCOUNT?.provider!=='judge'||window.LONGEVITY_ACCOUNT.storageKey!=='judge-demo-v1')return;
  const marker=KEY+':october-essential-records-v2';try{if(localStorage.getItem(marker))return;}catch{return;}
@@ -66,7 +69,7 @@ function simplifyGuestOctober(){
    row.who5={instrument:'WHO-5',version:'2024',recall:'past-two-weeks',answers,sampleData:true};
   }
  }
- try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{}
+ try{localStorage.setItem(KEY,JSON.stringify(sample));localStorage.setItem(marker,'1');state=sample;}catch{ }
 }
 simplifyGuestOctober();
 if(window.LONGEVITY_ACCOUNT?.provider==='judge'&&state.profile.personalGoals?.startsWith('Fictional sample:')){const note=document.createElement('p');note.className='note';note.textContent='Fictional October sample · age 40 · gradual progress with setbacks · not real measurements';document.querySelector('#home h1')?.after(note);}

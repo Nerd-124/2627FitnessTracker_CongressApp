@@ -1,4 +1,4 @@
-// Private progress documents; account ownership always comes from verified identity.
+
 async function progressStorage(request,env,user,path){
  if(!user)throw runStorageError('Sign in to sync progress.',401);
  if(user.provider!=='google')throw runStorageError('Use your Google account to sync private progress.',403);

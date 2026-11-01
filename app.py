@@ -95,14 +95,14 @@ class Handler(WebHandler):
             page = (ROOT / 'static/index.html').read_text()
             script = '<script>window.LONGEVITY_ACCOUNT=' + json.dumps(self.account(user)).replace('<', chr(92) + 'u003c') + ';</script>'
             return self.reply(page.replace('<script src="run-math.js">', script + '<script src="run-math.js">'))
-        # Only serve public assets. Never expose source, databases, or directories.
+
         allowed = { '/' + p.name for p in (ROOT / 'static').iterdir() if p.is_file() and p.name != 'index.html' }
         if path not in allowed:
             return self.send_error(404)
         super().do_GET()
 
     def do_POST(self):
-        # Browser form requests must originate from this local server.
+
         origin = self.headers.get('Origin')
         if origin and origin != 'http://' + self.headers.get('Host', ''):
             return self.send_error(403)
