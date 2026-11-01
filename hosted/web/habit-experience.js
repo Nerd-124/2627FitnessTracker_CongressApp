@@ -77,7 +77,6 @@ function goalFocus(profile){
  if(profile.goalFocus==='wellbeing')return'mental';
  if(['movement','mental','sleep','wellbeing'].includes(profile.goalFocus))return profile.goalFocus;
  const goal=String(profile.lifeGoal||'').toLowerCase();
- // Keyword matches provide a transparent tie-break, never a diagnosis or capacity prediction.
  if(/walk|hik|travel|run|cycl|swim|sport|dance|play/.test(goal))return'movement';
  if(/lift|strong|strength|carry/.test(goal))return'movement';
  if(/sleep|rest/.test(goal))return'sleep';
