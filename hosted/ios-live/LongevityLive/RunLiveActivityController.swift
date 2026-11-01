@@ -4,9 +4,7 @@ import CoreLocation
 import UIKit
 import UserNotifications
 
-// Web snapshots are authoritative in the foreground. Native location updates
-// keep approximate live stats current while WebKit is asleep; finished routes
-// are still filtered and saved by the web recorder after buffered fixes arrive.
+
 @MainActor
 final class RunLiveActivityController {
     private var activity: Activity<RunActivityAttributes>?
