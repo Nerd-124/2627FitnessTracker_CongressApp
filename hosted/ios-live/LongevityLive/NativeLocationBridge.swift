@@ -3,8 +3,6 @@ import CoreMotion
 import WebKit
 import UIKit
 
-// Location runs only for explicit web requests. During an active run, native GPS
-// buffers fixes while WebKit is suspended and delivers them on return.
 @MainActor
 final class NativeLocationBridge: NSObject, @preconcurrency CLLocationManagerDelegate, WKScriptMessageHandler {
     private struct Request {
@@ -102,8 +100,6 @@ final class NativeLocationBridge: NSObject, @preconcurrency CLLocationManagerDel
         webView?.evaluateJavaScript("window.__longevityNative?.receiveSteps(\(json));", completionHandler: nil)
     }
 
-    // This binding is native app storage, not account-local browser storage.
-    // Clearing a website cache or signing in as somebody else cannot reassign it.
     private var stepBinding: [String: Any]? {
         UserDefaults.standard.dictionary(forKey: "LongevityStepSourceV1")
     }
@@ -165,13 +161,12 @@ final class NativeLocationBridge: NSObject, @preconcurrency CLLocationManagerDel
         let generation = stepGeneration
         let calendar = Calendar.current, today = calendar.startOfDay(for: Date())
         lastStepPublish = .distantPast
-        // iOS retains recent motion history even when our app was closed.
-        // Read absolute daily totals; never estimate steps from GPS distance.
+
         for offset in 0..<7 {
             guard let start = calendar.date(byAdding: .day, value: -offset, to: today),
                   let next = calendar.date(byAdding: .day, value: 1, to: start) else { continue }
             let end = min(next, Date()), from = max(start, linkedAt), day = stepDate(start)
-            guard from < end else { continue } // Never read another carrier’s pre-link history.
+            guard from < end else { continue } 
             let prior = calendar.isDate(start, inSameDayAs: linkedAt) ? baseline : 0
             pedometer.queryPedometerData(from: from, to: end) { [weak self] data, error in
                 Task { @MainActor in
@@ -228,8 +223,7 @@ final class NativeLocationBridge: NSObject, @preconcurrency CLLocationManagerDel
     private func refreshTracking() {
         let authorized = manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways
         let watching = authorized && requests.values.contains(where: { $0.watch })
-        // Start the native background assertion while foregrounded; it must not
-        // depend on JavaScript running after iOS suspends the web process.
+
         if watching && backgroundSession == nil && UIApplication.shared.applicationState == .active {
             backgroundSession = CLBackgroundActivitySession()
         } else if !watching {
@@ -281,7 +275,6 @@ final class NativeLocationBridge: NSObject, @preconcurrency CLLocationManagerDel
         guard !flushingLocations, !bufferedLocations.isEmpty,
               UIApplication.shared.applicationState == .active,
               AppConfiguration.isWebsite(webView?.url), let webView else { return }
-        // Keep batches bounded so a long background run does not create one huge JS call.
         let batch = Array(bufferedLocations.prefix(200))
         guard let data = try? JSONSerialization.data(withJSONObject: batch),
               let json = String(data: data, encoding: .utf8) else { return }
